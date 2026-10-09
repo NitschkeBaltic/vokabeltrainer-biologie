@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lernkarten Biologie</title>
+<title>Lernkarten | Biologie</title>
 <style>
 :root{--bg:#f6f7f4;--card:#fff;--ink:#1d2a22;--mut:#6b7a70;--line:#dde3dc;--acc:#2f7d4f;--no:#b4532a;--f1:#d9822b;--f2:#c9a227;--f3:#7fae3f;--f4:#3f9a5f;--f5:#2f7d4f;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -72,12 +72,16 @@ select{flex:1;min-width:0;font:inherit;font-size:.9rem;font-weight:600;padding:1
 a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;color:var(--ink);font-size:.85rem;text-decoration:none;overflow-wrap:anywhere}
 .tools{text-align:center;margin-top:18px;font-size:.7rem;color:var(--mut);opacity:.7}
 .tools .lnk{font-size:.7rem;padding:6px 4px}
+.top select{padding:10px 8px;font-size:.85rem;text-overflow:clip}
+.top .dir{padding:0;width:44px;font-size:1.15rem;font-weight:400}
+.top .dir.rev{background:var(--acc);color:#fff;border-color:var(--acc)}
+.kb{display:none;margin-top:12px}
+@media (hover:hover) and (pointer:fine){.kb{display:block}}
 </style>
 </head>
 <body>
 <main>
-<div class="top"><select id="topic" aria-label="Thema"></select><button class="dir" id="bDir" title="Kartenseite wechseln"></button></div>
-<h1>🧬 Lernkarten Biologie</h1>
+<div class="top"><select id="topic" aria-label="Thema"></select><button class="dir" id="bDir" title="Kartenseite wechseln" aria-label="Kartenseite wechseln"></button></div>
 <div class="note" id="tip" hidden></div><div class="note warn" id="warn" hidden></div>
 <div class="sub" id="sub"></div>
 <div class="boxes" id="boxes"></div>
@@ -88,7 +92,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 <button class="ok" id="bOk" disabled>Sitzt ✓</button>
 </div>
 <div class="foot"><button class="neutral" id="bNew">＋ Eigene Karte</button><button class="neutral" id="bReset">Neu starten</button></div>
-<div class="sub" style="margin-top:12px">Tastatur: Leertaste = aufdecken · ← / 1 = Nochmal · → / 2 = Sitzt</div>
+<div class="sub kb">Tastatur: Leertaste = aufdecken · ← / 1 = Nochmal · → / 2 = Sitzt</div>
 <div class="tools"><button class="lnk" id="bExp">Importieren</button> · <button class="lnk" id="bOut">Exportieren</button></div>
 </main>
 <script>
@@ -146,7 +150,7 @@ function fill(){
 function render(){
   editing=false;fill();
   const ne=Object.keys(E).length+U.length;noteUpdate();
-  $("bDir").innerHTML=`⇄ ${S.rev?"Beschreibung → Begriff":"Begriff → Beschreibung"}`;
+  $("bDir").textContent="⇄";$("bDir").title=$("bDir").ariaLabel="Kartenseite wechseln: aktuell "+(S.rev?"Beschreibung → Begriff":"Begriff → Beschreibung");$("bDir").classList.toggle("rev",!!S.rev);
   const ids=scope(),counts=NAMES.map((_,b)=>ids.filter(i=>st(i).b===b).length);
   $("boxes").innerHTML=NAMES.map((nm,b)=>`<div class="box${cur!=null&&st(cur).b===b?' cur':''}"><b>${counts[b]}</b>${nm}</div>`).join("");
   $("bar").style.width=(counts[LAST]/ids.length*100)+"%";
