@@ -15,6 +15,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
 main{max-width:640px;margin:0 auto;padding:16px}
 h1{font-size:1.25rem;margin:4px 0 2px}
 .sub{color:var(--mut);font-size:.85rem;margin-bottom:14px}
+#sub{min-height:1.2em;margin-bottom:10px}
 .boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
 .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 2px;text-align:center;font-size:.72rem;color:var(--mut)}
 .box b{display:block;font-size:1.2rem;color:var(--ink)}
@@ -130,8 +131,12 @@ function idle(){const u=scope().filter(i=>st(i).b<LAST);return u.length===0?1:(u
 let isChk=false;
 function pick(){
   const ids=scope();
-  // Einstiegs-Check: ein paar bewährte Karten zuerst
-  while(S.chk&&S.chk.length){const k=S.chk.shift(),i=ids.find(j=>CARDS[j].k===k);if(i!==undefined&&CARDS[i].k!==S.last){isChk=true;return i}}
+  // Einstiegs-Check: eine zufällige Karte aus „Gelernt“ (ersatzweise aus dem höchsten Fach mit Karten)
+  if(S.cq>0){
+    let pool=ids.filter(i=>st(i).s&&st(i).b===LAST);
+    if(!pool.length){const top=Math.max(0,...ids.filter(i=>st(i).s&&st(i).b>=1).map(i=>st(i).b));pool=top?ids.filter(i=>st(i).s&&st(i).b===top):[]}
+    if(pool.length){S.cq--;isChk=true;return pool[Math.floor(Math.random()*pool.length)]}
+    S.cq=0}
   const by=(a,b)=>st(a).d-st(b).d||st(b).b-st(a).b||st(a).r-st(b).r;
   const p0=ids.filter(i=>CARDS[i].k!==S.last),L=p0.length?p0:ids;
   const seen=L.filter(i=>st(i).s),ok=seen.filter(i=>!st(i).w),due=ok.filter(i=>st(i).d<=S.t),re=due.filter(i=>st(i).n>0);
@@ -154,7 +159,7 @@ function render(){
   const ids=scope(),counts=NAMES.map((_,b)=>ids.filter(i=>st(i).b===b).length);
   $("boxes").innerHTML=NAMES.map((nm,b)=>`<div class="box${cur!=null&&st(cur).b===b?' cur':''}"><b>${counts[b]}</b>${nm}</div>`).join("");
   $("bar").style.width=(counts[LAST]/ids.length*100)+"%";
-  $("sub").textContent=`${counts[LAST]} von ${ids.length} Begriffen im Fach „Gelernt“`;
+  const rest=ids.length-counts[LAST];$("sub").textContent=(rest>0&&rest<=3&&ids.length>=10)?`Fast geschafft – noch ${rest} ${rest===1?"Karte":"Karten"} bis „Gelernt“`:"";
   if(cur==null||cur===undefined){
     const w=idle()!==1;
     $("stage").innerHTML=`<div class="card" style="cursor:default"><div class="done"><div style="font-size:2.5rem">${w?"⏳":"🎉"}</div><h2>${w?"Fast geschafft!":"Geschafft!"}</h2><p>${w?"Die letzten Karten werden in der nächsten Sitzung noch einmal geprüft – dann sind sie „Gelernt“.":`Alle ${ids.length} Begriffe sind im Fach „Gelernt“.`}</p><div class="row"><button class="neutral" id="bMore">Weiter wiederholen</button></div></div></div>`;
@@ -361,7 +366,8 @@ function rate(ok){
     if(c.b>=LAST)c.d=S.t+gapR(LAST);
     else if(c.b===3){c.b=LAST;c.w=0;c.d=S.t+gapR(LAST)} // „Sitzt“ in Fach 4 → „Gelernt“
     else{c.b++;if(c.b===3)c.ss=S.sess;c.d=S.t+gapR(c.b)}}
-  else{c.b=c.b===LAST?2:Math.max(0,c.b-1);c.w=0;c.n=(c.n||0)+1;c.d=S.t+2+Math.min(c.n,2)}
+  else{c.b=(isChk&&c.b===LAST)?3:c.b===LAST?2:Math.max(0,c.b-1);c.w=0;c.n=(c.n||0)+1;c.d=S.t+2+Math.min(c.n,2)} // Einstiegs-Check: „Gelernt“ + „Nochmal“ → Fach 4
+  if(isChk&&ok)S.cq=0; // Check bestanden
   S.last=CARDS[cur].k;if(!idle())S.cel=null;save();next()}
 $("topic").onchange=e=>{S.topic=e.target.value;S.last=null;save();next()};
 $("bDir").onclick=()=>{S.rev=!S.rev;shown=false;save();render()};
@@ -380,11 +386,7 @@ function startSession(){
   migrate();const now=Date.now();if(S.sess&&S.ts&&now-S.ts<SESS_MS)return;
   S.sess=(S.sess||0)+1;const pend=[];
   for(const k in S.c){const c=S.c[k];if(c.w){pend.push(k);c.w=0;c.d=S.t}} // wartende Karten sind jetzt wieder dran
-  const pool=scope().filter(i=>st(i).s&&st(i).b>=1);
-  pool.sort((a,b)=>(pend.includes(CARDS[b].k)-pend.includes(CARDS[a].k))||st(b).b-st(a).b||st(a).l-st(b).l||st(a).r-st(b).r);
-  const n=3+Math.floor(Math.random()*6),ch=pool.slice(0,n).map(i=>CARDS[i].k);
-  for(let i=ch.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ch[i],ch[j]]=[ch[j],ch[i]]}
-  S.chk=ch;S.ts=now;save()}
+  S.cq=2;S.chk=[];S.ts=now;save()} // Einstiegs-Check: höchstens 2 zufällige Karten (die zweite nur nach „Nochmal“)
 try{localStorage.setItem("vt_probe","1");localStorage.removeItem("vt_probe")}catch(e){bad=1}
 applyOverlay();build();S=load();if(!TOPICS.some(t=>t.id===S.topic)&&S.topic!=="all")S.topic=TOPICS[0].id;startSession();next();
 </script>
