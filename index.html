@@ -84,6 +84,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 .mbar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin:4px 0 8px}.mbar i{display:block;height:100%;background:var(--acc)}
 .wk{display:flex;gap:6px;align-items:flex-end;height:54px;margin:6px 0}
 .wk div{flex:1;font-size:.65rem;color:var(--mut);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.rt{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:10px}.rt th,.rt td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
 .wk i{display:block;width:100%;max-width:18px;background:var(--line);border-radius:3px 3px 0 0;min-height:2px}.wk .h i{background:var(--acc)}
 .tools .lnk{font-size:.7rem;padding:6px 4px}
 .top select{padding:10px 8px;font-size:.85rem;text-overflow:clip}
@@ -158,8 +159,15 @@ function pick(){
   const cnt=b=>ids.filter(i=>st(i).s&&st(i).b===b).length;
   for(let b=2;b>=0;b--)if(cnt(b)>=LIM[b]){const c=ok.filter(i=>st(i).b===b);if(c.length)return c.sort(by)[0]} // 3. WIP-Limit voll: Karte aus dem vollen (hintersten) Fach vorziehen
   const nw=L.filter(i=>!st(i).s);
-  if(nw.length&&cnt(0)<LIM[0])return nw.sort((a,b)=>st(a).r-st(b).r)[0]; // 4. neue Karte, nur wenn Fach 1 Platz hat
+  if(nw.length&&cnt(0)<LIM[0])return newPick(nw); // 4. neue Karte, nur wenn Fach 1 Platz hat
   const wk=ok.filter(i=>st(i).b<LAST);return (wk.length?wk:ok).sort(by)[0]}                                   // 5. sonst die am nächsten fällige noch nicht gelernte Karte (erst zuletzt „Gelernt“)
+// Neue Karten: bei „Alle Themen“ zuerst aus dem Thema, dessen Frist den größten täglichen Bedarf hat (offene Karten ÷ Tage bis „Fällig“);
+// ohne Fristen oder in einem einzelnen Thema bleibt es die zufällige Reihenfolge.
+function newPick(nw){const rnd=(a,b)=>st(a).r-st(b).r;
+  if(S.topic==="all"){try{const u={};TOPICS.forEach(t=>{const dd=dueDays(t.id);u[t.id]=dd===null||dd<0?0:restT(t.id)/Math.max(1,dd)});
+    const sc=i=>Math.max(...CARDS[i].tids.map(t=>u[t]||0)),mx=Math.max(...nw.map(sc));
+    if(mx>0)return nw.filter(i=>sc(i)>=mx-1e-9).sort(rnd)[0]}catch(e){}}
+  return nw.sort(rnd)[0]}
 const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
 function fill(){
   const sel=$("topic"),all=CARDS.map((c,i)=>i),cnt=ids=>ids.filter(i=>st(i).b===LAST).length+"/"+ids.length;
@@ -186,17 +194,24 @@ function closeForm(){cur==null?next():render()}
 function form(mode){
   editing=true;const c=mode==="edit"?CARDS[cur]:null,isU=c&&c.u,k=c&&c.k;
   const sel=mode==="new"?(S.topic==="all"?[]:[S.topic]):(isU?c.tids:[]);
-  const chk=(mode==="new"||isU)?`<label>Themen (mindestens eins)</label><div class="chk">${TOPICS.map(t=>`<label><input type="checkbox" value="${t.id}"${sel.includes(t.id)?" checked":""}>${t.num} ${t.name}</label>`).join("")}</div>`:"";
+  const boxes=s2=>TOPICS.map(t=>`<label><input type="checkbox" value="${t.id}"${s2.includes(t.id)?" checked":""}>${t.num} ${esc(t.name)}</label>`).join("");
+  const chk=(mode==="new"||isU)?`<label>Themen (mindestens eins)</label><div class="chk">${boxes(sel)}</div><label for="eNT">Neues Thema ergänzen (optional)</label><input id="eNT" placeholder="z. B. 11.1 Cytologie" autocomplete="off">`:"";
   $("stage").innerHTML=`<div class="edit"><div class="tag" id="eM">${mode==="new"?"Eigene Karte erstellen":"Karte bearbeiten · "+c.tn}</div><label for="eT">Begriff</label><input id="eT"><label for="eD">Beschreibung</label><textarea id="eD"></textarea>${chk}<div class="row"><button class="neutral" id="eX">Abbrechen</button><button class="ok" id="eS">${mode==="new"?"Hinzufügen":"Speichern"}</button></div><div style="text-align:center">${isU?'<button class="lnk" id="eL">Karte löschen</button>':""}${!isU&&E[k]?'<button class="lnk" id="eR">Original wiederherstellen</button>':""}</div></div>`;
   if(c){$("eT").value=gT(cur);$("eD").value=gD(cur)}
   $("bNo").disabled=$("bOk").disabled=true;$("eX").onclick=closeForm;
   const msg=m=>{$("eM").textContent=m};
   $("eS").onclick=()=>{
-    const t=$("eT").value.trim(),d=$("eD").value.trim(),tids=[...document.querySelectorAll(".chk input:checked")].map(x=>x.value);
+    const t=$("eT").value.trim(),d=$("eD").value.trim(),tids=[...document.querySelectorAll(".edit .chk input:checked")].map(x=>x.value);
     if(!t||!d)return msg("Bitte Begriff und Beschreibung ausfüllen");
-    if(chk&&!tids.length)return msg("Bitte mindestens ein Thema wählen");
+    let nt=null;const ntv=chk?$("eNT").value.trim():"";
+    if(ntv){const m=ntv.match(/^(\d{1,2}\.\d{1,2})\s+(.+)$/);if(!m)return msg("Neues Thema: Nummer und Name angeben, z. B. 11.1 Cytologie");
+      const ex=TOPICS.find(x=>x.num===m[1]);
+      if(ex){if(nm(ex.name)!==nm(m[2]))return msg(`Die Nummer ${m[1]} gehört schon zu „${ex.name}“`);if(!tids.includes(ex.id))tids.push(ex.id)}
+      else nt={num:m[1],name:m[2].trim()}}
+    if(chk&&!tids.length&&!nt)return msg("Bitte mindestens ein Thema wählen");
+    if(nt){let id=slug(nt.name);while(TOPICS.some(x=>x.id===id))id+="-2";const ov=readOv();ov.push({id,num:nt.num,name:nt.name,cards:[],own:1});writeOv(ov);applyOverlay();tids.push(id);}
     if(mode==="new"){U.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),t,d,tids});saveU();build();
-      $("eT").value=$("eD").value="";msg("✓ Hinzugefügt – weitere Karte erstellen oder „Fertig“");$("eX").textContent="Fertig";$("eT").focus();return}
+      $("eT").value=$("eD").value="";if(nt){$("eNT").value="";document.querySelector(".edit .chk").innerHTML=boxes(tids)}msg("✓ Hinzugefügt"+(nt?" · neues Thema „"+nt.num+" "+nt.name+"“":"")+" – weitere Karte erstellen oder „Fertig“");$("eX").textContent="Fertig";$("eT").focus();return}
     if(isU){const u=U.find(x=>x.id===c.id);u.t=t;u.d=d;u.tids=tids;saveU();build()}
     else{if(t===c.t&&d===c.d)delete E[k];else E[k]={t,d};saveE()}
     render()};
@@ -315,11 +330,50 @@ function buildDocx(t){
     f("word/document.xml",X+`<w:document ${NS}><w:body>${body}</w:body></w:document>`),
     f("word/_rels/document.xml.rels",X+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'),
     f("word/styles.xml",X+`<w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="de-DE"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="40" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`)])}
+// ---- Prüfergebnisse: werden verschlüsselt gespeichert (nur mit dem Code der Lehrkraft lesbar) und lassen sich als Datei weitergeben
+const RES_PUB="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsACNN4yPf7eFcp4k05rUrduUkIdY37VLb2fCjlG0C9g8vuVix1P7FX8Ftlm5/5iGQCKrwDYB2DRT6+PuwwovEEAfZ3MDqhExlzl2G7SXKm3jgSZiJ+kst4225wRNyzAM5FAE7V+1Srqk4g3DG59MXm01zhxiLVqTNrb0agsgQwdT8MQgxTVjluOpLPgjAY1YcPKrFKRQ6fj5bMaAooEW4H6QQ9cdYtdePFVTwdtFgoxZNzlSozH9aEF8IFC9NVO+QCeO9BAIb9/fxr1AalhFGUs3GyVK4atfUiQUaCJcVgk3N87oyjpCYtWf8w89wjk/Evd5JuTedNctIV/pV+SS3wIDAQAB",RES_KEY={"s":"9dUF+B3o0byR8juMx1ECRg==","i":"kqDeDewl8z3+tw0b","c":"pyS0s0bgmpLccwAH5+JTtKvw/akVEpjFZuTLgvFmGfSNcqjdrIiUHwY40qF1nqKyFZm4FS8Q2i54FeElbTdT/aNCXM2Ot+9XFHoHAlxLeBf8bWEhnr7xK5Z31uYmtz4obnJLDjq2PTOCFZywuCeSR74eQlRjBOSgcyCQ584VXtDxG5KrnO1f9YHZwMQ3hbvQ4bAYxDZ2tZHHgtMgbRzd3H8S5LE1FfICCnUqmA3btq7j9MyLQNbYpZsr3G34LPb/yfdOTnGO49yXY1ngK266F+0JCYcOQwXsFBkAACW8W3CqLKFsKONQLeF04JfeziGvGa1HmnYMGupHiwRcBaZHo2yIqCD7a1g8BlAAV3g0XfWdPhe1Mt9H1a3MmVEvkGLWSUHqnYBqJlBL+vR94lPk3jnmFolFD8rvU/6vY7Vp2JI+0AbNCIgIXg9bk0z5jq/pxPcB/i7/s8ad86skRzEdmwgREisTQxXG8acq71FeiUcxEKfNnjc0tALWfaYu//7tsbu8KInNTe5FJAXdMG1ptw2hmaboiK2Dd+I6uufkfXaNvwjcRSM4sAANzsKpgKYPO5T7AqDqJIdjUeBWEhxUYyGVwDkp+YJH7K1InyareNPgKReaZY55XuSC4uOQxcjLrcBubOxjJe7Hjn9AgsLAQpyCrP0b0v3j4n+bNakeqVqrtzZWOmu7k5xMOhON/dnv+vxYcF1EEyf0xjBWSxCZJzc+GeVFjJmXMn+SoU0C3O8GGb7mXgAu1omKz6Wg82hEWpyH/a9Zn3bwGyCzgz+scOY+GmIER0F4JtxgwCQPF29KjaJlonoSTSeYp1COrX3sr+ofhUPkKLtDw+1wI7UI+HZn/uTWd6P3X3H/LKRYcNBavjaJkJqCHiv/R1a9XOp3MNgv3ElOBzuwaZZvfWiGfMrIVTeYrALrAKw2pfIyjfu7AfzLcEsSJQ3B7iscLX1G0guHGNOowZGQQyXcodfUJ2vwPTf+2sKOhicQ6/ssOLUwmHjYx7sutkTamaAvmy9ASQD/FcCyd2hbAn+X2QWs2ChxkoRjCSkAZWo0kwp64G6GGtq6uov56i2ldC1muP3IboMKUwpBMhxwMCdKff9ZQpbwyCDB5qlInBSofZxvzV9fZ8OTUG0XH5Fm4yTz2ltvy6DFUm+lsvqtpoqRYnh6J0tNwoLeiC4qwU8CDk+a9Be4Djgym5/+QaxTDZu2qiZYG4+kJ86hNyZ0UtkeKUQYTkz651OnJclua07fHiOam+mhExEakjgkv+XJC3t0NPdIAQsXmlOjjLY6RB18gSLyEsYOWNIoawtmYaAWaHbUq6V9IwWAyw3BKz8GF4gyfRB8XGl4qchxSpqYUpl8azYrGC+dUmOWwAVecYhS6Rkxgn0zjLTVPBuUM1ztvdhrl8x7Y7c3BdGzvQSDOXtaRn42sz+Jnnl4ymkI8rCQ1DPuqwAd4Fkoe3XNN5EbqPQl3Veg1SIURUqWGis1Y5WG3lyFG52e/MOOqFjDr+fgmFRH29yLydzdJhoUyxE1aGKdmQIBvJUZz2sTKNB/V4ITTSA0YSL2UDlQ3m8ZTm3Pd+eeduARb+Bq9glMLnx1jpbQjQXa+B9qblmuAUa56KRhRGUh0Cg/tVbN/sfao4WccK/xy/82"},RK="vt_res";
+const b64=u=>{let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const hasC=()=>!!(window.crypto&&crypto.subtle);
+async function encRec(o){const c=crypto.subtle,pub=await c.importKey("spki",unb64(RES_PUB),{name:"RSA-OAEP",hash:"SHA-256"},false,["encrypt"]),
+  k=await c.generateKey({name:"AES-GCM",length:256},true,["encrypt"]),iv=crypto.getRandomValues(new Uint8Array(12)),
+  ct=new Uint8Array(await c.encrypt({name:"AES-GCM",iv},k,new TextEncoder().encode(JSON.stringify(o)))),
+  ek=new Uint8Array(await c.encrypt({name:"RSA-OAEP"},pub,await c.exportKey("raw",k)));
+  return [b64(ek),b64(iv),b64(ct)].join(".")}
+async function openRes(code){const c=crypto.subtle,w=RES_KEY,base=await c.importKey("raw",new TextEncoder().encode(code),"PBKDF2",false,["deriveKey"]),
+  kk=await c.deriveKey({name:"PBKDF2",salt:unb64(w.s),iterations:300000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]),
+  pk=await c.decrypt({name:"AES-GCM",iv:unb64(w.i)},kk,unb64(w.c)), // schlägt bei falschem Code fehl
+  priv=await c.importKey("pkcs8",pk,{name:"RSA-OAEP",hash:"SHA-256"},false,["decrypt"]);
+  return async rec=>{const [ek,iv,ct]=rec.split(".").map(unb64),raw=await c.decrypt({name:"RSA-OAEP"},priv,ek),k=await c.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+    return JSON.parse(new TextDecoder().decode(await c.decrypt({name:"AES-GCM",iv},k,ct)))}}
+const readRes=()=>{try{const a=JSON.parse(localStorage.getItem(RK));return Array.isArray(a)?a:[]}catch(e){return[]}};
+async function logRes(z){if(z.logged||!hasC())return;z.logged=1;
+  try{const tp=TOPICS.filter(t=>(M.qt||[]).includes(t.id)).map(t=>t.num).join(", "),
+    rec=await encRec({t:Date.now(),p:Math.round(z.ok/z.q.length*100),n:z.q.length,tp}),a=readRes();a.push(rec);localStorage.setItem(RK,JSON.stringify(a))}catch(e){}}
+const p2=n=>String(n).padStart(2,"0"),fD=t=>{const d=new Date(t);return p2(d.getDate())+"."+p2(d.getMonth()+1)+"."+d.getFullYear()},fT=t=>{const d=new Date(t);return p2(d.getHours())+":"+p2(d.getMinutes())};
+function resDlg(){editing=true;$("bNo").disabled=$("bOk").disabled=true;
+  $("stage").innerHTML=`<div class="edit"><div class="tag" id="tM">Auswertung (Lehrkraft)</div><label for="tC">Code</label><input id="tC" type="password" inputmode="numeric" autocomplete="off"><label class="fbtn">Ergebnisdateien wählen (optional)<input type="file" id="tF" accept=".txt,.json,text/plain,application/json" multiple></label><div class="row"><button class="neutral" id="tX">Schließen</button><button class="ok" id="tA">Auswerten</button></div><div id="tR"></div></div>`;
+  $("tX").onclick=closeForm;
+  $("tA").onclick=async()=>{const m=$("tM");if(!hasC()){m.textContent="Dieser Browser kann das nicht (Verschlüsselung fehlt).";return}
+    m.textContent="Prüfe Code …";let dec;try{dec=await openRes($("tC").value.trim())}catch(e){m.textContent="Code falsch.";return}
+    const rows=[];let bad=0;const seen=new Set();
+    const add=async(name,recs)=>{for(const r of recs){try{const o=await dec(r),key=name+"|"+o.t;if(seen.has(key))continue;seen.add(key);rows.push({n:name,t:o.t,p:o.p,c:o.n,tp:o.tp||""})}catch(e){bad++}}};
+    await add(M.nm||"(dieses Gerät)",readRes());
+    for(const fl of Array.from($("tF").files||[])){try{const j=JSON.parse(await fl.text());if(j&&Array.isArray(j.r))await add(String(j.n||fl.name),j.r);else bad++}catch(e){bad++}}
+    rows.sort((a,b)=>a.n.localeCompare(b.n,"de")||a.t-b.t);
+    const csv="﻿Name;Datum;Uhrzeit;Ergebnis in %;Karten;Themen\r\n"+rows.map(r=>[r.n,fD(r.t),fT(r.t),r.p,r.c,r.tp].map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(";")).join("\r\n");
+    m.textContent=`${rows.length} ${rows.length===1?"Ergebnis":"Ergebnisse"}${bad?` · ${bad} nicht lesbar`:""}`;
+    $("tR").innerHTML=(rows.length?`<a class="dl" href="${URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}))}" download="Pruefergebnisse_${dk()}.csv">⬇ Als CSV speichern (Excel)</a><table class="rt"><tr><th>Name</th><th>Datum</th><th>%</th><th>Themen</th></tr>${rows.slice(0,300).map(r=>`<tr><td>${esc(r.n)}</td><td>${fD(r.t)}</td><td>${r.p}</td><td>${esc(r.tp)}</td></tr>`).join("")}</table>`:"")}}
 function exportDlg(){
   editing=true;$("bNo").disabled=$("bOk").disabled=true;
   const sel=TOPICS.map(t=>S.topic==="all"||S.topic===t.id);
   const info=t=>{const ch=Object.keys(E).filter(k=>k.indexOf(t.id+"|")===0).length,cu=U.filter(u=>u.tids.indexOf(t.id)>=0).length;return t.num+" "+t.name+" · "+topicRows(t).length+" Karten"+(ch||cu?" ("+[ch?ch+" geändert":"",cu?cu+" eigene":""].filter(Boolean).join(", ")+")":"")};
-  $("stage").innerHTML=`<div class="edit"><div class="tag">Kartenlisten exportieren</div><div class="mini">Erstellt je Thema eine Word-Datei (.docx) mit zwei Spalten (Begriff | Beschreibung), einschließlich deiner Textänderungen und eigenen Karten. Die Dateien lassen sich mit „Importieren“ wieder einlesen.</div><div class="chk col">${TOPICS.map((t,i)=>`<label><input type="checkbox" id="xc${i}"${sel[i]?" checked":""}>${esc(info(t))}</label>`).join("")}</div><div class="row"><button class="neutral" id="xX">Schließen</button><button class="ok" id="xA">Erstellen</button></div><div id="xR"></div><div class="mini" id="xM"></div></div>`;
+  $("stage").innerHTML=`<div class="edit"><div class="tag">Kartenlisten exportieren</div><div class="mini">Erstellt je Thema eine Word-Datei (.docx) mit zwei Spalten (Begriff | Beschreibung), einschließlich deiner Textänderungen und eigenen Karten. Die Dateien lassen sich mit „Importieren“ wieder einlesen.</div><div class="chk col">${TOPICS.map((t,i)=>`<label><input type="checkbox" id="xc${i}"${sel[i]?" checked":""}>${esc(info(t))}</label>`).join("")}</div><div class="row"><button class="neutral" id="xX">Schließen</button><button class="ok" id="xA">Erstellen</button></div><div id="xR"></div><div class="mini" id="xM"></div><div class="tag" style="margin-top:20px">Prüfergebnisse</div><div class="mini" id="rI"></div><label for="rNm">Dein Name</label><input id="rNm" autocomplete="name"><div class="row"><button class="ok" id="rA">Ergebnisse als Datei</button></div><div id="rR"></div><div style="text-align:center"><button class="lnk" id="rL">Auswertung (Lehrkraft)</button></div></div>`;
+  {const n=readRes().length;$("rI").textContent=n?`${n} ${n===1?"Ergebnis":"Ergebnisse"} gespeichert. Die Daten sind verschlüsselt – du kannst sie weder einsehen noch ändern, aber als Datei an die Lehrkraft senden.`:"Noch keine Ergebnisse. Sie entstehen, wenn du eine Prüfung (Button „Prüfen“) bis zum Ende machst.";$("rNm").value=M.nm||"";
+  $("rL").onclick=resDlg;
+  $("rA").onclick=()=>{const nmv=$("rNm").value.trim(),a=readRes();if(!nmv){$("rI").textContent="Bitte deinen Namen eintragen.";return}if(!a.length){$("rI").textContent="Noch keine Ergebnisse vorhanden.";return}
+    M.nm=nmv;mSave();const fn=`Pruefergebnisse_${slug(nmv)}_${dk()}.txt`;
+    $("rR").innerHTML=`<a class="dl" href="${URL.createObjectURL(new Blob([JSON.stringify({v:1,n:nmv,r:a})],{type:"text/plain"}))}" download="${ea(fn)}">⬇ ${esc(fn)} (${a.length})</a>`}}
   TOPICS.forEach((t,i)=>{$("xc"+i).onchange=e=>{sel[i]=e.target.checked}});
   $("xX").onclick=closeForm;
   $("xA").onclick=()=>{
@@ -361,7 +415,9 @@ function importDlg(){
   $("iX").onclick=()=>{if(changed)next();else closeForm()};
   $("iD").onclick=()=>{
     if(!dArm){dArm=true;$("iD").textContent="Importierte Listen wirklich entfernen? Nochmal tippen";return}
-    try{localStorage.removeItem(OK)}catch(e){}
+    const keep=readOv().filter(t=>t&&t.id&&!BASE.some(b=>b.id===t.id)&&(t.own||U.some(u=>u.tids.includes(t.id)))).map(t=>({id:t.id,num:t.num,name:t.name,cards:[],own:1})); // selbst angelegte Themen bleiben (samt eigenen Karten)
+    keep.forEach(t=>Object.keys(E).forEach(k=>{if(k.indexOf(t.id+"|")===0)delete E[k]}));saveE();
+    try{if(keep.length)localStorage.setItem(OK,JSON.stringify(keep));else localStorage.removeItem(OK)}catch(e){}
     applyOverlay();build();if(!TOPICS.some(t=>t.id===S.topic)&&S.topic!=="all")S.topic=TOPICS[0].id;S.last=null;save();
     changed=true;$("iM").textContent="✓ Mitgelieferte Listen sind wiederhergestellt.";$("iX").textContent="Fertig";$("iD").hidden=true;$("iA").disabled=true}}
 function exportEdits(){
@@ -392,7 +448,7 @@ $("bNew").onclick=()=>form("new");$("bExp").onclick=importDlg;$("bOut").onclick=
 const LG={"y":{"arm":"M300 316Q299 320 299 323Q300 327 302 329Q304 332 306 333Q308 334 312 334Q316 334 335 323Q355 312 370 306Q385 300 399 296Q414 292 429 290Q444 288 457 288Q471 288 480 289Q490 290 501 292Q513 295 529 301Q545 308 547 308Q549 308 554 300Q559 293 566 286Q573 279 578 275Q583 272 591 268Q600 264 605 262Q611 261 625 260Q639 260 648 262Q657 264 664 267Q671 270 678 274Q685 279 690 284Q695 289 707 290Q720 291 731 293Q743 296 755 300Q768 305 778 310Q789 316 799 323Q809 330 821 342Q834 354 843 367Q853 380 860 395Q868 411 870 413Q873 416 875 417Q878 418 882 417Q886 417 889 414Q892 412 893 410Q894 408 894 403Q894 398 889 381Q884 364 879 353Q875 342 869 331Q864 321 856 309Q849 297 841 286Q833 276 817 260Q802 244 789 234Q776 224 755 212Q734 201 715 194Q696 187 673 182Q650 177 635 175Q621 174 601 174Q581 174 572 175Q563 176 544 180Q525 184 502 191Q480 199 453 211Q426 224 397 241Q369 259 342 280Q315 301 308 307Q302 313 300 316Z","head":"M627 275Q617 275 612 276Q607 277 599 280Q592 283 586 286Q581 290 574 296Q568 303 565 307Q562 312 558 321Q554 330 552 343Q551 356 552 364Q554 373 558 382Q562 391 565 396Q569 401 574 406Q579 411 584 414Q589 418 595 421Q602 424 611 426Q621 428 627 428Q634 428 646 425Q658 422 666 417Q674 413 679 408Q684 404 691 392Q699 381 701 372Q704 364 704 356Q705 348 704 341Q703 334 698 323Q694 312 691 307Q688 303 681 296Q675 290 670 287Q666 284 657 280Q649 277 643 276Q638 275 627 275Z"},"r":{"arm":"M827 210Q823 210 819 211Q816 213 814 215Q812 218 811 222Q811 227 812 230Q814 234 826 246Q838 259 849 273Q861 288 868 300Q876 312 884 329Q892 347 896 360Q900 374 902 386Q904 399 904 417Q905 436 904 443Q903 450 911 452Q920 455 927 458Q934 462 939 466Q945 470 950 475Q956 481 963 491Q970 502 974 515Q978 528 978 536Q979 544 977 553Q976 563 971 574Q966 586 969 605Q973 624 973 641Q973 659 971 671Q969 683 965 697Q961 711 954 726Q947 741 937 755Q928 769 916 781Q904 794 902 797Q901 800 901 805Q902 810 905 812Q908 815 912 815Q916 816 920 814Q924 813 934 806Q945 800 953 794Q961 788 972 778Q983 768 999 748Q1016 728 1029 705Q1043 683 1051 662Q1059 642 1063 624Q1067 607 1068 581Q1070 556 1068 534Q1066 513 1060 488Q1055 464 1046 441Q1038 419 1026 398Q1015 378 1001 359Q987 340 965 316Q944 293 925 276Q906 260 881 242Q856 225 843 218Q831 211 827 210Z","head":"M887 464Q880 464 872 465Q865 467 857 470Q849 474 842 478Q836 483 832 487Q828 491 823 497Q819 504 815 514Q811 524 810 537Q809 550 810 557Q812 565 816 574Q820 583 827 592Q835 601 840 605Q846 609 855 613Q865 617 870 618Q875 619 885 619Q895 619 900 618Q906 617 914 613Q923 610 930 605Q937 600 942 594Q948 588 951 583Q954 579 957 570Q961 562 962 557Q963 552 963 541Q963 530 961 523Q960 517 956 508Q952 500 943 490Q935 481 930 477Q925 474 915 470Q905 466 899 465Q894 464 887 464Z"},"b":{"arm":"M1086 685Q1085 681 1081 678Q1077 675 1073 675Q1069 675 1066 676Q1063 678 1051 698Q1040 719 1027 736Q1015 754 1002 767Q990 780 977 790Q965 800 946 810Q928 821 917 825Q907 829 891 832Q876 836 875 850Q875 865 869 879Q864 893 858 900Q853 908 848 912Q844 917 837 922Q830 927 822 930Q815 934 807 936Q799 938 788 938Q777 939 771 938Q765 937 757 942Q750 947 737 953Q724 959 712 962Q700 966 691 967Q682 969 667 969Q653 970 640 968Q627 967 609 961Q591 956 575 947Q560 939 556 939Q552 939 548 942Q544 945 543 951Q543 957 544 959Q545 961 562 975Q579 989 588 995Q598 1001 608 1006Q618 1011 635 1017Q653 1024 675 1028Q697 1033 715 1034Q734 1035 761 1032Q789 1030 810 1025Q832 1020 847 1014Q863 1009 873 1004Q884 999 896 991Q909 984 926 970Q943 957 959 940Q975 924 993 899Q1011 875 1021 858Q1031 841 1040 822Q1050 803 1057 785Q1065 767 1071 749Q1077 731 1082 710Q1087 690 1086 685Z","head":"M790 771Q782 771 773 772Q764 774 756 777Q749 780 743 784Q737 788 731 794Q725 800 721 806Q717 812 713 821Q710 830 709 842Q708 855 710 865Q713 876 718 885Q723 894 728 899Q733 905 738 909Q744 913 750 916Q756 919 763 921Q771 923 780 923Q789 924 796 923Q803 922 809 920Q815 918 823 913Q831 909 836 904Q842 899 846 893Q851 887 854 881Q857 875 859 864Q862 854 862 848Q862 843 859 830Q856 817 852 810Q848 803 841 796Q835 789 824 782Q813 776 805 774Q798 772 790 771Z"},"p":{"arm":"M299 640Q296 642 293 646Q290 651 285 662Q281 673 275 693Q270 714 268 729Q266 745 266 766Q266 787 267 796Q268 806 273 828Q278 850 288 876Q299 902 312 924Q326 947 338 961Q350 976 364 989Q379 1002 388 1009Q398 1016 409 1023Q421 1030 441 1039Q462 1049 483 1055Q504 1062 528 1067Q552 1072 585 1075Q618 1079 649 1078Q680 1078 695 1076Q711 1075 714 1073Q718 1072 720 1068Q723 1065 723 1060Q723 1056 720 1053Q718 1050 716 1049Q714 1048 702 1047Q691 1047 670 1042Q649 1038 632 1032Q616 1026 599 1016Q582 1007 573 1000Q565 994 554 983Q543 973 534 962Q526 952 519 941Q513 930 498 934Q484 938 470 937Q456 937 449 935Q442 933 435 930Q429 927 422 922Q416 918 409 911Q403 905 396 894Q390 884 387 875Q384 866 383 860Q383 855 372 844Q361 834 351 821Q342 809 335 796Q328 783 322 765Q316 747 313 729Q311 711 311 698Q312 686 315 669Q319 652 317 648Q316 644 313 642Q311 640 306 639Q302 639 299 640Z","head":"M481 773Q469 772 462 773Q455 774 449 776Q443 778 435 782Q427 787 420 793Q414 799 407 810Q401 821 399 828Q397 836 396 843Q396 851 397 857Q398 864 400 871Q403 879 407 886Q411 893 416 899Q422 905 432 911Q443 918 451 920Q460 923 468 923Q477 924 484 923Q491 922 497 920Q503 918 511 913Q519 909 524 904Q529 900 536 889Q543 879 545 871Q548 863 548 851Q549 840 547 833Q546 826 542 818Q539 810 536 805Q533 801 527 795Q521 789 515 785Q509 781 501 778Q494 775 481 773Z"},"g":{"arm":"M512 306Q510 304 504 303Q498 302 481 301Q465 301 453 302Q442 303 428 305Q415 308 398 313Q382 318 373 321Q365 325 347 334Q329 344 313 355Q297 367 276 386Q256 406 242 423Q228 441 220 453Q212 466 205 478Q199 491 191 512Q184 533 180 553Q176 573 175 583Q174 594 174 609Q174 624 175 643Q177 662 182 693Q188 725 196 754Q204 783 210 799Q216 816 222 830Q229 845 231 847Q234 850 237 851Q240 853 244 853Q249 853 251 852Q253 851 255 846Q258 842 254 824Q251 807 249 791Q248 775 248 760Q249 745 252 725Q256 705 261 690Q266 675 272 661Q279 648 285 638Q291 629 300 618Q309 607 309 606Q309 605 302 597Q296 589 292 580Q288 572 286 565Q284 558 283 545Q283 532 284 524Q286 517 288 510Q291 504 296 496Q301 488 308 480Q315 473 321 468Q327 464 333 461Q339 458 342 449Q345 441 351 429Q358 418 363 411Q368 404 377 394Q386 384 400 372Q415 361 431 352Q447 344 463 339Q479 334 494 332Q509 330 512 327Q515 325 516 321Q518 317 516 312Q515 308 512 306Z","head":"M368 466Q361 467 353 469Q346 471 339 474Q332 478 328 480Q325 483 318 490Q312 497 307 506Q302 515 300 520Q299 525 298 532Q297 539 297 546Q298 554 300 563Q303 572 305 576Q307 580 311 586Q316 593 322 598Q328 604 336 608Q344 613 350 615Q357 617 373 617Q390 617 401 612Q413 608 418 604Q423 601 429 594Q435 588 440 579Q445 570 446 565Q448 560 449 552Q450 545 449 538Q449 531 446 522Q444 513 441 508Q439 503 435 497Q431 492 425 486Q419 481 410 476Q401 471 396 469Q391 468 383 467Q376 466 368 466Z"}},LVB="170 170 922 914";
 const lg=(n,cl)=>`<svg class="${cl}" viewBox="${LVB}" aria-hidden="true">`+["y","r","b","p","g"].map((k,i)=>{const o=i<n?1:.2;return `<path fill="var(--f${i+1})" opacity="${o}" d="${LG[k].arm}"/><path fill="var(--f${i+1})" opacity="${o}" d="${LG[k].head}"/>`}).join("")+"</svg>";
 // ---- Motivation: nur lokal gespeichert (eigener Schlüssel), ohne Einfluss auf die Lernlogik
-let M={goal:5,gm:null,gk:{},hist:{},hit:{},ht:{},hh:{},exam:"",ex:{},ms:{},nq:0,lq:"",hq:"",qt:[]},MSG="",qz=null;
+let M={nm:"",goal:5,gm:null,gk:{},hist:{},hit:{},ht:{},hh:{},exam:"",ex:{},ms:{},nq:0,lq:"",hq:"",qt:[]},MSG="",qz=null;
 try{const r=JSON.parse(localStorage.getItem("vt_mot")||"null");if(r&&typeof r==="object")M=Object.assign(M,r);if(!M.hist||typeof M.hist!=="object")M.hist={};if(!M.hit||typeof M.hit!=="object")M.hit={};if(!M.ms||typeof M.ms!=="object")M.ms={};M.goal=Math.min(99,Math.max(1,parseInt(M.goal)||5));M.gm=parseInt(M.gm)>0?Math.min(99,parseInt(M.gm)):null;M.nq=parseInt(M.nq)||0;if(!Array.isArray(M.qt))M.qt=[];for(const o of ["ex","gk","ht","hh"])if(!M[o]||typeof M[o]!=="object"||Array.isArray(M[o]))M[o]={};if(M.gm){if(!M.gk.all)M.gk.all=M.gm;M.gm=null}}catch(e){}
 const mSave=()=>{try{localStorage.setItem("vt_mot",JSON.stringify(M))}catch(e){}};
 const dk=d=>{d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -435,11 +491,12 @@ function motUpd(){if(!$("bMot"))return;snap();
 function motPanel(){const P=$("motP"),k=S.topic,all=k==="all";migEx();
   const d=dk(),t=cnt(k,d),G=goal(k),sg=sugg(k),DN=["So","Mo","Di","Mi","Do","Fr","Sa"];
   const near=all?TOPICS.map(x=>({x,dd:dueDays(x.id)})).filter(y=>y.dd!==null&&y.dd>=0).sort((a,b)=>a.dd-b.dd)[0]:null;
-  const due=all?(near?M.ex[near.x.id]:""):(M.ex[k]||""),dd=all?(near?near.dd:null):dueDays(k),inD=n=>n===0?"heute":`in ${n} ${n===1?"Tag":"Tagen"}`;
-  let h=`<div class="mrow" style="justify-content:space-between"><span class="nw">Heute: <b>${t}</b> von <input type="number" id="mGoal" min="1" max="99" value="${G}" aria-label="Heute zu lernende Karten"></span><span class="nw">Fällig: <input type="date" id="mDue" value="${esc(due)}"${all?" disabled":""} aria-label="Fälligkeitsdatum"></span></div><div class="mbar"><i style="width:${Math.min(100,t/G*100)}%"></i></div>`;
+  const dates=TOPICS.map(x=>M.ex[x.id]||""),common=dates.every(x=>x===dates[0])?dates[0]:"",mixed=!common&&dates.some(x=>x);
+  const due=all?common:(M.ex[k]||""),dd=all?(near?near.dd:null):dueDays(k),inD=n=>n===0?"heute":`in ${n} ${n===1?"Tag":"Tagen"}`;
+  let h=`<div class="mrow" style="justify-content:space-between"><span class="nw">Heute: <b>${t}</b> von <input type="number" id="mGoal" min="1" max="99" value="${G}" aria-label="Heute zu lernende Karten"></span><span class="nw">Fällig: <input type="date" id="mDue" value="${esc(due)}" aria-label="Fälligkeitsdatum${all?" für alle Themen":""}"></span></div><div class="mbar"><i style="width:${Math.min(100,t/G*100)}%"></i></div>`;
   if(sg!==null)h+=`<div class="mrow" style="color:var(--mut)">Vorschlag: ${sg} pro Tag · ${all?`als Nächstes fällig: ${near.x.num} ${inD(near.dd)}`:`fällig ${inD(dd)}`}${M.gk[k]&&M.gk[k]!==sg?` <button class="lnk" id="mAuto">Vorschlag übernehmen</button>`:""}</div>`;
   else if(!all&&dd!==null&&dd<0)h+=`<div class="mrow" style="color:var(--mut)">Das Fälligkeitsdatum ist vorbei.</div>`;
-  else if(all&&!near)h+=`<div class="mrow" style="color:var(--mut)">Das Fälligkeitsdatum wird je Thema festgelegt.</div>`;
+  if(all&&!common)h+=`<div class="mrow" style="color:var(--mut)">${mixed?"Die Fristen sind je Thema verschieden – eine Eingabe setzt sie für alle.":"Die Eingabe setzt die Frist für alle Themen."}</div>`;
   const days=[];for(let i=6;i>=0;i--){const dy=dk(dAgo(i));days.push({n:DN[dAgo(i).getDay()],c:cnt(k,dy),h:hitOf(k,dy)})}
   const mx=Math.max(G,...days.map(x=>x.c)),sum=days.reduce((a,x)=>a+x.c,0),hits=days.filter(x=>x.h).length,s=streak(k);
   h+=`<div class="mrow">Serie: <b>${s}</b> ${s===1?"Tag":"Tage"} <span style="color:var(--mut)">(ein freier Tag pro Woche ist erlaubt)</span></div>`;
@@ -447,7 +504,7 @@ function motPanel(){const P=$("motP"),k=S.topic,all=k==="all";migEx();
   h+=`<div class="mrow">${lg(sym(),"lgb")} ${pct()} % aller Karten sind „Gelernt“ (${nLearned()} von ${CARDS.length})</div>`;
   P.innerHTML=h;
   $("mGoal").onchange=e=>{const v=parseInt(e.target.value);if(isNaN(v))delete M.gk[k];else M.gk[k]=clampG(v);fixHit();mSave();motUpd()};
-  $("mDue").onchange=e=>{const v=e.target.value;if(v)M.ex[k]=v;else delete M.ex[k];fixHit();mSave();motUpd()};
+  $("mDue").onchange=e=>{const v=e.target.value;(all?TOPICS.map(x=>x.id):[k]).forEach(id=>{if(v)M.ex[id]=v;else delete M.ex[id]});fixHit();mSave();motUpd()};
   if($("mAuto"))$("mAuto").onclick=()=>{delete M.gk[k];fixHit();mSave();motUpd()}}
 $("bMot").onclick=()=>{const P=$("motP");P.hidden=!P.hidden;if(!P.hidden)motPanel()};$("bQz").onclick=quiz;
 const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -467,7 +524,7 @@ function qzRate(ok){const z=qz;if(!z||z.mode!=="run"||!z.sh)return;
   if(ok)z.ok++;else{const c=st(z.q[z.i]);if(c.b===LAST){c.b=3;c.w=0;c.n=(c.n||0)+1;c.d=S.t+2+Math.min(c.n,2);save()}z.miss++} // nicht gewusst → zurück in Fach 4
   z.i++;z.sh=false;qzR()}
 function qzR(){const z=qz,S_=$("stage");
-  if(z.i>=z.q.length){M.lq=dk();M.nq=0;mSave();$("bNo").disabled=$("bOk").disabled=true;
+  if(z.i>=z.q.length){M.lq=dk();M.nq=0;mSave();logRes(z);$("bNo").disabled=$("bOk").disabled=true;
     S_.innerHTML=`<div class="card" style="cursor:default"><div class="done"><div style="font-size:2.5rem">${z.miss?"✅":"🎉"}</div><h2>${z.ok} von ${z.q.length} sitzen</h2><p>${z.miss?`${z.miss} ${z.miss===1?"Karte geht":"Karten gehen"} zurück in Fach 4 und ${z.miss===1?"kommt":"kommen"} bald wieder.`:"Alle Karten bleiben in „Gelernt“."}</p><div class="row"><button class="neutral" id="qX">Zurück zum Lernen</button></div></div></div>`;$("qX").onclick=qDone;return}
   const i=z.q[z.i],T=gT(i),D=gD(i),q=S.rev?D:T,a=S.rev?T:D;
   S_.innerHTML=`<div class="card" id="qC"><div class="tag">Prüfen · ${z.i+1}/${z.q.length}</div><div class="term${S.rev?" q":""}" ${S.rev?'style="white-space:pre-line"':""}>${esc(q)}</div>${z.sh?`<div class="def">${esc(a)}</div>`:`<div class="hint">Tippen zum Aufdecken</div>`}</div><div class="tools"><button class="lnk" id="qEnd">Prüfung beenden</button></div>`;
