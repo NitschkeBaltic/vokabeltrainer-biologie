@@ -80,7 +80,7 @@ a.dl{display:block;text-align:center;border:1px solid var(--line);border-radius:
 #motP{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:10px;font-size:.82rem}
 #motP .mrow{display:flex;align-items:center;gap:8px;margin:7px 0;flex-wrap:wrap}
 #motP input[type=number],#motP input[type=date]{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-#motP input[type=number]{width:3.4rem}#motP summary{cursor:pointer;margin:7px 0;color:var(--ink)}.drow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0 6px 14px}#motP input[type=date]{font-size:.78rem;padding:5px 4px}
+#motP input[type=number]{width:3.4rem}#motP input[type=date]{font-size:.78rem;padding:5px 4px}
 .mbar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin:4px 0 8px}.mbar i{display:block;height:100%;background:var(--acc)}
 .wk{display:flex;gap:6px;align-items:flex-end;height:54px;margin:6px 0}
 .wk div{flex:1;font-size:.65rem;color:var(--mut);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
@@ -392,8 +392,8 @@ $("bNew").onclick=()=>form("new");$("bExp").onclick=importDlg;$("bOut").onclick=
 const LG={"y":{"arm":"M300 316Q299 320 299 323Q300 327 302 329Q304 332 306 333Q308 334 312 334Q316 334 335 323Q355 312 370 306Q385 300 399 296Q414 292 429 290Q444 288 457 288Q471 288 480 289Q490 290 501 292Q513 295 529 301Q545 308 547 308Q549 308 554 300Q559 293 566 286Q573 279 578 275Q583 272 591 268Q600 264 605 262Q611 261 625 260Q639 260 648 262Q657 264 664 267Q671 270 678 274Q685 279 690 284Q695 289 707 290Q720 291 731 293Q743 296 755 300Q768 305 778 310Q789 316 799 323Q809 330 821 342Q834 354 843 367Q853 380 860 395Q868 411 870 413Q873 416 875 417Q878 418 882 417Q886 417 889 414Q892 412 893 410Q894 408 894 403Q894 398 889 381Q884 364 879 353Q875 342 869 331Q864 321 856 309Q849 297 841 286Q833 276 817 260Q802 244 789 234Q776 224 755 212Q734 201 715 194Q696 187 673 182Q650 177 635 175Q621 174 601 174Q581 174 572 175Q563 176 544 180Q525 184 502 191Q480 199 453 211Q426 224 397 241Q369 259 342 280Q315 301 308 307Q302 313 300 316Z","head":"M627 275Q617 275 612 276Q607 277 599 280Q592 283 586 286Q581 290 574 296Q568 303 565 307Q562 312 558 321Q554 330 552 343Q551 356 552 364Q554 373 558 382Q562 391 565 396Q569 401 574 406Q579 411 584 414Q589 418 595 421Q602 424 611 426Q621 428 627 428Q634 428 646 425Q658 422 666 417Q674 413 679 408Q684 404 691 392Q699 381 701 372Q704 364 704 356Q705 348 704 341Q703 334 698 323Q694 312 691 307Q688 303 681 296Q675 290 670 287Q666 284 657 280Q649 277 643 276Q638 275 627 275Z"},"r":{"arm":"M827 210Q823 210 819 211Q816 213 814 215Q812 218 811 222Q811 227 812 230Q814 234 826 246Q838 259 849 273Q861 288 868 300Q876 312 884 329Q892 347 896 360Q900 374 902 386Q904 399 904 417Q905 436 904 443Q903 450 911 452Q920 455 927 458Q934 462 939 466Q945 470 950 475Q956 481 963 491Q970 502 974 515Q978 528 978 536Q979 544 977 553Q976 563 971 574Q966 586 969 605Q973 624 973 641Q973 659 971 671Q969 683 965 697Q961 711 954 726Q947 741 937 755Q928 769 916 781Q904 794 902 797Q901 800 901 805Q902 810 905 812Q908 815 912 815Q916 816 920 814Q924 813 934 806Q945 800 953 794Q961 788 972 778Q983 768 999 748Q1016 728 1029 705Q1043 683 1051 662Q1059 642 1063 624Q1067 607 1068 581Q1070 556 1068 534Q1066 513 1060 488Q1055 464 1046 441Q1038 419 1026 398Q1015 378 1001 359Q987 340 965 316Q944 293 925 276Q906 260 881 242Q856 225 843 218Q831 211 827 210Z","head":"M887 464Q880 464 872 465Q865 467 857 470Q849 474 842 478Q836 483 832 487Q828 491 823 497Q819 504 815 514Q811 524 810 537Q809 550 810 557Q812 565 816 574Q820 583 827 592Q835 601 840 605Q846 609 855 613Q865 617 870 618Q875 619 885 619Q895 619 900 618Q906 617 914 613Q923 610 930 605Q937 600 942 594Q948 588 951 583Q954 579 957 570Q961 562 962 557Q963 552 963 541Q963 530 961 523Q960 517 956 508Q952 500 943 490Q935 481 930 477Q925 474 915 470Q905 466 899 465Q894 464 887 464Z"},"b":{"arm":"M1086 685Q1085 681 1081 678Q1077 675 1073 675Q1069 675 1066 676Q1063 678 1051 698Q1040 719 1027 736Q1015 754 1002 767Q990 780 977 790Q965 800 946 810Q928 821 917 825Q907 829 891 832Q876 836 875 850Q875 865 869 879Q864 893 858 900Q853 908 848 912Q844 917 837 922Q830 927 822 930Q815 934 807 936Q799 938 788 938Q777 939 771 938Q765 937 757 942Q750 947 737 953Q724 959 712 962Q700 966 691 967Q682 969 667 969Q653 970 640 968Q627 967 609 961Q591 956 575 947Q560 939 556 939Q552 939 548 942Q544 945 543 951Q543 957 544 959Q545 961 562 975Q579 989 588 995Q598 1001 608 1006Q618 1011 635 1017Q653 1024 675 1028Q697 1033 715 1034Q734 1035 761 1032Q789 1030 810 1025Q832 1020 847 1014Q863 1009 873 1004Q884 999 896 991Q909 984 926 970Q943 957 959 940Q975 924 993 899Q1011 875 1021 858Q1031 841 1040 822Q1050 803 1057 785Q1065 767 1071 749Q1077 731 1082 710Q1087 690 1086 685Z","head":"M790 771Q782 771 773 772Q764 774 756 777Q749 780 743 784Q737 788 731 794Q725 800 721 806Q717 812 713 821Q710 830 709 842Q708 855 710 865Q713 876 718 885Q723 894 728 899Q733 905 738 909Q744 913 750 916Q756 919 763 921Q771 923 780 923Q789 924 796 923Q803 922 809 920Q815 918 823 913Q831 909 836 904Q842 899 846 893Q851 887 854 881Q857 875 859 864Q862 854 862 848Q862 843 859 830Q856 817 852 810Q848 803 841 796Q835 789 824 782Q813 776 805 774Q798 772 790 771Z"},"p":{"arm":"M299 640Q296 642 293 646Q290 651 285 662Q281 673 275 693Q270 714 268 729Q266 745 266 766Q266 787 267 796Q268 806 273 828Q278 850 288 876Q299 902 312 924Q326 947 338 961Q350 976 364 989Q379 1002 388 1009Q398 1016 409 1023Q421 1030 441 1039Q462 1049 483 1055Q504 1062 528 1067Q552 1072 585 1075Q618 1079 649 1078Q680 1078 695 1076Q711 1075 714 1073Q718 1072 720 1068Q723 1065 723 1060Q723 1056 720 1053Q718 1050 716 1049Q714 1048 702 1047Q691 1047 670 1042Q649 1038 632 1032Q616 1026 599 1016Q582 1007 573 1000Q565 994 554 983Q543 973 534 962Q526 952 519 941Q513 930 498 934Q484 938 470 937Q456 937 449 935Q442 933 435 930Q429 927 422 922Q416 918 409 911Q403 905 396 894Q390 884 387 875Q384 866 383 860Q383 855 372 844Q361 834 351 821Q342 809 335 796Q328 783 322 765Q316 747 313 729Q311 711 311 698Q312 686 315 669Q319 652 317 648Q316 644 313 642Q311 640 306 639Q302 639 299 640Z","head":"M481 773Q469 772 462 773Q455 774 449 776Q443 778 435 782Q427 787 420 793Q414 799 407 810Q401 821 399 828Q397 836 396 843Q396 851 397 857Q398 864 400 871Q403 879 407 886Q411 893 416 899Q422 905 432 911Q443 918 451 920Q460 923 468 923Q477 924 484 923Q491 922 497 920Q503 918 511 913Q519 909 524 904Q529 900 536 889Q543 879 545 871Q548 863 548 851Q549 840 547 833Q546 826 542 818Q539 810 536 805Q533 801 527 795Q521 789 515 785Q509 781 501 778Q494 775 481 773Z"},"g":{"arm":"M512 306Q510 304 504 303Q498 302 481 301Q465 301 453 302Q442 303 428 305Q415 308 398 313Q382 318 373 321Q365 325 347 334Q329 344 313 355Q297 367 276 386Q256 406 242 423Q228 441 220 453Q212 466 205 478Q199 491 191 512Q184 533 180 553Q176 573 175 583Q174 594 174 609Q174 624 175 643Q177 662 182 693Q188 725 196 754Q204 783 210 799Q216 816 222 830Q229 845 231 847Q234 850 237 851Q240 853 244 853Q249 853 251 852Q253 851 255 846Q258 842 254 824Q251 807 249 791Q248 775 248 760Q249 745 252 725Q256 705 261 690Q266 675 272 661Q279 648 285 638Q291 629 300 618Q309 607 309 606Q309 605 302 597Q296 589 292 580Q288 572 286 565Q284 558 283 545Q283 532 284 524Q286 517 288 510Q291 504 296 496Q301 488 308 480Q315 473 321 468Q327 464 333 461Q339 458 342 449Q345 441 351 429Q358 418 363 411Q368 404 377 394Q386 384 400 372Q415 361 431 352Q447 344 463 339Q479 334 494 332Q509 330 512 327Q515 325 516 321Q518 317 516 312Q515 308 512 306Z","head":"M368 466Q361 467 353 469Q346 471 339 474Q332 478 328 480Q325 483 318 490Q312 497 307 506Q302 515 300 520Q299 525 298 532Q297 539 297 546Q298 554 300 563Q303 572 305 576Q307 580 311 586Q316 593 322 598Q328 604 336 608Q344 613 350 615Q357 617 373 617Q390 617 401 612Q413 608 418 604Q423 601 429 594Q435 588 440 579Q445 570 446 565Q448 560 449 552Q450 545 449 538Q449 531 446 522Q444 513 441 508Q439 503 435 497Q431 492 425 486Q419 481 410 476Q401 471 396 469Q391 468 383 467Q376 466 368 466Z"}},LVB="170 170 922 914";
 const lg=(n,cl)=>`<svg class="${cl}" viewBox="${LVB}" aria-hidden="true">`+["y","r","b","p","g"].map((k,i)=>{const o=i<n?1:.2;return `<path fill="var(--f${i+1})" opacity="${o}" d="${LG[k].arm}"/><path fill="var(--f${i+1})" opacity="${o}" d="${LG[k].head}"/>`}).join("")+"</svg>";
 // ---- Motivation: nur lokal gespeichert (eigener Schlüssel), ohne Einfluss auf die Lernlogik
-let M={on:1,goal:5,gm:null,hist:{},hit:{},exam:"",ex:{},ms:{},nq:0,lq:"",hq:"",qt:[]},MSG="",qz=null;
-try{const r=JSON.parse(localStorage.getItem("vt_mot")||"null");if(r&&typeof r==="object")M=Object.assign(M,r);if(!M.hist||typeof M.hist!=="object")M.hist={};if(!M.hit||typeof M.hit!=="object")M.hit={};if(!M.ms||typeof M.ms!=="object")M.ms={};M.goal=Math.min(99,Math.max(1,parseInt(M.goal)||5));M.gm=parseInt(M.gm)>0?Math.min(99,parseInt(M.gm)):null;M.nq=parseInt(M.nq)||0;if(!Array.isArray(M.qt))M.qt=[];if(!M.ex||typeof M.ex!=="object"||Array.isArray(M.ex))M.ex={}}catch(e){}
+let M={goal:5,gm:null,gk:{},hist:{},hit:{},ht:{},hh:{},exam:"",ex:{},ms:{},nq:0,lq:"",hq:"",qt:[]},MSG="",qz=null;
+try{const r=JSON.parse(localStorage.getItem("vt_mot")||"null");if(r&&typeof r==="object")M=Object.assign(M,r);if(!M.hist||typeof M.hist!=="object")M.hist={};if(!M.hit||typeof M.hit!=="object")M.hit={};if(!M.ms||typeof M.ms!=="object")M.ms={};M.goal=Math.min(99,Math.max(1,parseInt(M.goal)||5));M.gm=parseInt(M.gm)>0?Math.min(99,parseInt(M.gm)):null;M.nq=parseInt(M.nq)||0;if(!Array.isArray(M.qt))M.qt=[];for(const o of ["ex","gk","ht","hh"])if(!M[o]||typeof M[o]!=="object"||Array.isArray(M[o]))M[o]={};if(M.gm){if(!M.gk.all)M.gk.all=M.gm;M.gm=null}}catch(e){}
 const mSave=()=>{try{localStorage.setItem("vt_mot",JSON.stringify(M))}catch(e){}};
 const dk=d=>{d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const dAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return d};
@@ -401,52 +401,54 @@ if(!/^\d{4}-\d\d-\d\d$/.test(M.lq||"")){M.lq=dk();mSave()} // Datum der letzten 
 const nLearned=()=>CARDS.filter((_,i)=>st(i).b===LAST).length;
 const pct=()=>Math.floor(nLearned()/(CARDS.length||1)*100);
 const sym=()=>{const n=nLearned(),p=pct();return n===0?0:p>=100?5:Math.min(4,1+Math.floor(p/25))}; // so viele Köpfe des Symbols sind eingefärbt
-function streak(){let s=M.hit[dk()]?1:0,since=99;
-  for(let i=1;i<120;i++){if(M.hit[dk(dAgo(i))]){s++;since++}else if(since>=7)since=0;else break}return s} // ein freier Tag pro Woche
+const cnt=(k,d)=>k==="all"?(M.hist[d]||0):((M.ht[k]&&M.ht[k][d])||0); // k: „all“ oder Themen-ID – Zähler, Ziele und Serie gelten je Thema
+const hitOf=(k,d)=>!!(k==="all"?M.hit[d]:(M.hh[k]&&M.hh[k][d]));
+function setHit(k,d,v){if(k==="all"){if(v)M.hit[d]=1;else delete M.hit[d]}else{M.hh[k]=M.hh[k]||{};if(v)M.hh[k][d]=1;else delete M.hh[k][d]}}
+function streak(k){let s=hitOf(k,dk())?1:0,since=99;
+  for(let i=1;i<120;i++){if(hitOf(k,dk(dAgo(i)))){s++;since++}else if(since>=7)since=0;else break}return s} // ein freier Tag pro Woche
 const clampG=v=>Math.min(99,Math.max(1,v));
-let dOpen=false;
 function migEx(){if(M.exam){TOPICS.forEach(t=>{if(!M.ex[t.id])M.ex[t.id]=M.exam});M.exam="";mSave()}} // früher: ein Termin für alle Themen
 function dueDays(tid){migEx();const d=M.ex[tid];if(!d)return null;const dd=Math.round((new Date(d+"T00:00:00")-new Date(dk()+"T00:00:00"))/864e5);return isNaN(dd)?null:dd}
 const restT=tid=>CARDS.filter((c,i)=>c.tids.includes(tid)&&st(i).b!==LAST).length;
-function sugg(){let s=0,any=0;TOPICS.forEach(t=>{const dd=dueDays(t.id);if(dd===null||dd<0)return;any=1;
-  const r=M.sod&&M.sod.d===dk()&&M.sod.r&&typeof M.sod.r==="object"&&M.sod.r[t.id]!==undefined?M.sod.r[t.id]:restT(t.id);s+=Math.ceil(r/Math.max(1,dd))});
-  return any?clampG(s):null} // je Thema: offene Karten (Stand Tagesbeginn) ÷ Tage bis „Fällig“; Summe über alle Themen mit Datum
+function sugg(k){const one=t=>{const dd=dueDays(t);if(dd===null||dd<0)return null;
+    const r=M.sod&&M.sod.d===dk()&&M.sod.r&&typeof M.sod.r==="object"&&M.sod.r[t]!==undefined?M.sod.r[t]:restT(t);return Math.ceil(r/Math.max(1,dd))};
+  if(k!=="all"){const v=one(k);return v===null?null:clampG(v)}
+  let s=0,any=0;TOPICS.forEach(t=>{const v=one(t.id);if(v!==null){any=1;s+=v}});return any?clampG(s):null} // offene Karten (Stand Tagesbeginn) ÷ Tage bis „Fällig“; bei „Alle Themen“ die Summe der Themen mit Datum
 function snap(){if(!M.sod||M.sod.d!==dk()||typeof M.sod.r!=="object"){const r={};TOPICS.forEach(t=>r[t.id]=restT(t.id));M.sod={d:dk(),r};mSave()}} // offene Karten je Thema zu Tagesbeginn: der Vorschlag bleibt über den Tag stabil
-const fmtD=d=>d.slice(8)+"."+d.slice(5,7)+".";
-const goal=()=>M.gm||sugg()||M.goal;
-function fixHit(){const d=dk();if((M.hist[d]||0)>=goal())M.hit[d]=1;else delete M.hit[d]}
+const goal=k=>(M.gk[k||S.topic])||sugg(k||S.topic)||M.goal;
+function fixHit(){[...new Set([S.topic,"all"])].forEach(k=>setHit(k,dk(),cnt(k,dk())>=goal(k)))}
 const HINT=n=>`${n} neue Karten gelernt – Zeit für die Prüfung?`;
 function motTime(){const d=dk();if(M.hq===d||!nLearned())return;const days=Math.round((new Date(d+"T00:00:00")-new Date(M.lq+"T00:00:00"))/864e5);
   if(days>=28){MSG=`${Math.floor(days/7)} Wochen ohne Prüfung – jetzt prüfen?`;M.hq=d;mSave()}} // höchstens einmal pro Tag, nur kurz sichtbar
-function motHit(){M.nq=(M.nq||0)+1;const d=dk();let m="";
-  if(M.on){const G=goal();M.hist[d]=(M.hist[d]||0)+1;const t=M.hist[d];
-    if(t>=G&&!M.hit[d]){M.hit[d]=1;m=`Tagesziel erreicht – ${G} Karten neu in „Gelernt“`;const s=streak();if([3,7,14,30,60,100].includes(s))m+=` · ${s} Tage in Folge`}
-    else if(M.nq%10===0)m=HINT(M.nq);
-    else if(!MSG){if(G>=4&&t===Math.ceil(G/2))m=`Halbzeit: ${t} von ${G} für heute`;else if(G>=3&&G-t===1)m="Noch 1 Karte bis zum Tagesziel";else if(t%3===0)m=t>G?`${t} Karten heute – Ziel übertroffen`:`Heute ${t} von ${G} – weiter so`}
-    const p=pct();for(const q of [25,50,75,100])if(p>=q&&!M.ms[q]){M.ms[q]=1;m=`${q} % aller Karten sind „Gelernt“`}}
+function motHit(){M.nq=(M.nq||0)+1;const d=dk(),tids=CARDS[cur].tids,k=S.topic,was=hitOf(k,d);
+  M.hist[d]=(M.hist[d]||0)+1;tids.forEach(t=>{M.ht[t]=M.ht[t]||{};M.ht[t][d]=(M.ht[t][d]||0)+1});
+  new Set(["all",...tids]).forEach(x=>{if(cnt(x,d)>=goal(x))setHit(x,d,1)});
+  const G=goal(k),t=cnt(k,d);let m="";
+  if(!was&&hitOf(k,d)){m=`Tagesziel erreicht – ${G} Karten neu in „Gelernt“`;const s=streak(k);if([3,7,14,30,60,100].includes(s))m+=` · ${s} Tage in Folge`}
   else if(M.nq%10===0)m=HINT(M.nq);
+  else if(!MSG){if(G>=4&&t===Math.ceil(G/2))m=`Halbzeit: ${t} von ${G} für heute`;else if(G>=3&&G-t===1)m="Noch 1 Karte bis zum Tagesziel";else if(t%3===0)m=t>G?`${t} Karten heute – Ziel übertroffen`:`Heute ${t} von ${G} – weiter so`}
+  const p=pct();for(const q of [25,50,75,100])if(p>=q&&!M.ms[q]){M.ms[q]=1;m=`${q} % aller Karten sind „Gelernt“`}
   if(m)MSG=m;mSave()}
-function motUpd(){const b=$("bMot");if(!b)return;snap();
-  if(M.on){const p=pct();let ch=0;for(const q of [25,50,75,100])if(M.ms[q]&&p<q){delete M.ms[q];ch=1}if(ch)mSave()}
+function motUpd(){if(!$("bMot"))return;snap();
+  const p=pct();let ch=0;for(const q of [25,50,75,100])if(M.ms[q]&&p<q){delete M.ms[q];ch=1}if(ch)mSave();
   if(!$("motP").hidden)motPanel()}
-function motPanel(){const P=$("motP"),od=$("mDue");if(od)dOpen=od.open;let h=`<label class="mrow"><input type="checkbox" id="mOn"${M.on?" checked":""}> Plan umsetzen</label>`;
-  if(M.on){migEx();const t=M.hist[dk()]||0,G=goal(),sg=sugg(),DN=["So","Mo","Di","Mi","Do","Fr","Sa"];
-    const set=TOPICS.filter(x=>M.ex[x.id]),near=TOPICS.map(x=>({x,dd:dueDays(x.id)})).filter(y=>y.dd!==null&&y.dd>=0).sort((a,b)=>a.dd-b.dd)[0];
-    h+=`<div class="mrow"><span class="nw">Heute: <b>${t}</b> von <input type="number" id="mGoal" min="1" max="99" value="${G}" aria-label="Heute zu lernende Karten"></span></div><div class="mbar"><i style="width:${Math.min(100,t/G*100)}%"></i></div>`;
-    h+=`<details id="mDue"${dOpen?" open":""}><summary>${set.length?"Fällig: "+set.map(x=>`${x.num} (${fmtD(M.ex[x.id])})`).join(" · "):"Fällig: pro Thema festlegen"}</summary>${TOPICS.map(x=>`<label class="drow"><span>${x.num} ${esc(x.name)}</span><input type="date" data-t="${x.id}" value="${esc(M.ex[x.id]||"")}" aria-label="Fälligkeitsdatum ${esc(x.name)}"></label>`).join("")}</details>`;
-    if(sg!==null)h+=`<div class="mrow" style="color:var(--mut)">Vorschlag: ${sg} pro Tag · als Nächstes fällig: ${near.x.num} ${near.dd===0?"heute":`in ${near.dd} ${near.dd===1?"Tag":"Tagen"}`}${M.gm&&M.gm!==sg?` <button class="lnk" id="mAuto">Vorschlag übernehmen</button>`:""}</div>`;
-    else if(set.length)h+=`<div class="mrow" style="color:var(--mut)">Alle Termine sind abgelaufen.</div>`;
-    const days=[];for(let i=6;i>=0;i--){const d=dAgo(i),k=dk(d);days.push({n:DN[d.getDay()],c:M.hist[k]||0,h:!!M.hit[k]})}
-    const mx=Math.max(G,...days.map(x=>x.c)),sum=days.reduce((a,x)=>a+x.c,0),hits=days.filter(x=>x.h).length,s=streak();
-    h+=`<div class="mrow">Serie: <b>${s}</b> ${s===1?"Tag":"Tage"} <span style="color:var(--mut)">(ein freier Tag pro Woche ist erlaubt)</span></div>`;
-    h+=`<div class="wk">${days.map(x=>`<div class="${x.h?"h":""}"><i style="height:${Math.max(4,x.c/mx*34)}px"></i>${x.n}</div>`).join("")}</div><div class="mrow" style="color:var(--mut)">Letzte 7 Tage: ${sum} neu gelernt · Ziel an ${hits} ${hits===1?"Tag":"Tagen"} erreicht</div>`;
-    h+=`<div class="mrow">${lg(sym(),"lgb")} ${pct()} % aller Karten sind „Gelernt“ (${nLearned()} von ${CARDS.length})</div>`}
+function motPanel(){const P=$("motP"),k=S.topic,all=k==="all";migEx();
+  const d=dk(),t=cnt(k,d),G=goal(k),sg=sugg(k),DN=["So","Mo","Di","Mi","Do","Fr","Sa"];
+  const near=all?TOPICS.map(x=>({x,dd:dueDays(x.id)})).filter(y=>y.dd!==null&&y.dd>=0).sort((a,b)=>a.dd-b.dd)[0]:null;
+  const due=all?(near?M.ex[near.x.id]:""):(M.ex[k]||""),dd=all?(near?near.dd:null):dueDays(k),inD=n=>n===0?"heute":`in ${n} ${n===1?"Tag":"Tagen"}`;
+  let h=`<div class="mrow" style="justify-content:space-between"><span class="nw">Heute: <b>${t}</b> von <input type="number" id="mGoal" min="1" max="99" value="${G}" aria-label="Heute zu lernende Karten"></span><span class="nw">Fällig: <input type="date" id="mDue" value="${esc(due)}"${all?" disabled":""} aria-label="Fälligkeitsdatum"></span></div><div class="mbar"><i style="width:${Math.min(100,t/G*100)}%"></i></div>`;
+  if(sg!==null)h+=`<div class="mrow" style="color:var(--mut)">Vorschlag: ${sg} pro Tag · ${all?`als Nächstes fällig: ${near.x.num} ${inD(near.dd)}`:`fällig ${inD(dd)}`}${M.gk[k]&&M.gk[k]!==sg?` <button class="lnk" id="mAuto">Vorschlag übernehmen</button>`:""}</div>`;
+  else if(!all&&dd!==null&&dd<0)h+=`<div class="mrow" style="color:var(--mut)">Das Fälligkeitsdatum ist vorbei.</div>`;
+  else if(all&&!near)h+=`<div class="mrow" style="color:var(--mut)">Das Fälligkeitsdatum wird je Thema festgelegt.</div>`;
+  const days=[];for(let i=6;i>=0;i--){const dy=dk(dAgo(i));days.push({n:DN[dAgo(i).getDay()],c:cnt(k,dy),h:hitOf(k,dy)})}
+  const mx=Math.max(G,...days.map(x=>x.c)),sum=days.reduce((a,x)=>a+x.c,0),hits=days.filter(x=>x.h).length,s=streak(k);
+  h+=`<div class="mrow">Serie: <b>${s}</b> ${s===1?"Tag":"Tage"} <span style="color:var(--mut)">(ein freier Tag pro Woche ist erlaubt)</span></div>`;
+  h+=`<div class="wk">${days.map(x=>`<div class="${x.h?"h":""}"><i style="height:${Math.max(4,x.c/mx*34)}px"></i>${x.n}</div>`).join("")}</div><div class="mrow" style="color:var(--mut)">Letzte 7 Tage: ${sum} neu gelernt · Ziel an ${hits} ${hits===1?"Tag":"Tagen"} erreicht</div>`;
+  h+=`<div class="mrow">${lg(sym(),"lgb")} ${pct()} % aller Karten sind „Gelernt“ (${nLearned()} von ${CARDS.length})</div>`;
   P.innerHTML=h;
-  $("mOn").onchange=e=>{M.on=e.target.checked?1:0;if(!M.on)MSG="";mSave();render()};
-  if(M.on){$("mGoal").onchange=e=>{const v=parseInt(e.target.value);M.gm=isNaN(v)?null:clampG(v);fixHit();mSave();motUpd()};
-    $("mDue").ontoggle=e=>{dOpen=e.target.open};
-    P.querySelectorAll('input[type=date]').forEach(i=>i.onchange=e=>{const v=e.target.value;if(v)M.ex[i.dataset.t]=v;else delete M.ex[i.dataset.t];fixHit();mSave();motUpd()});
-    if($("mAuto"))$("mAuto").onclick=()=>{M.gm=null;fixHit();mSave();motUpd()}}}
+  $("mGoal").onchange=e=>{const v=parseInt(e.target.value);if(isNaN(v))delete M.gk[k];else M.gk[k]=clampG(v);fixHit();mSave();motUpd()};
+  $("mDue").onchange=e=>{const v=e.target.value;if(v)M.ex[k]=v;else delete M.ex[k];fixHit();mSave();motUpd()};
+  if($("mAuto"))$("mAuto").onclick=()=>{delete M.gk[k];fixHit();mSave();motUpd()}}
 $("bMot").onclick=()=>{const P=$("motP");P.hidden=!P.hidden;if(!P.hidden)motPanel()};$("bQz").onclick=quiz;
 const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const qDone=()=>{qz=null;next()};
