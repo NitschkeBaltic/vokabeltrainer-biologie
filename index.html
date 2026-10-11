@@ -161,11 +161,16 @@ function pick(){
   const nw=L.filter(i=>!st(i).s);
   if(nw.length&&cnt(0)<LIM[0])return newPick(nw); // 4. neue Karte, nur wenn Fach 1 Platz hat
   const wk=ok.filter(i=>st(i).b<LAST);return (wk.length?wk:ok).sort(by)[0]}                                   // 5. sonst die am nächsten fällige noch nicht gelernte Karte (erst zuletzt „Gelernt“)
-// Neue Karten: bei „Alle Themen“ zuerst aus dem Thema, dessen Frist den größten täglichen Bedarf hat (offene Karten ÷ Tage bis „Fällig“);
-// ohne Fristen oder in einem einzelnen Thema bleibt es die zufällige Reihenfolge.
+// Neue Karten bei „Alle Themen“: Themen mit Frist werden so eingeplant, dass möglichst viele Themen fristgerecht ganz „Gelernt“ sind.
+// Kapazität = Tagesziel von „Alle Themen“. Nach Fristen geordnet (Moore-Hodgson) fällt aus der Planung, was in der Frist nicht mehr zu schaffen ist (zuerst das größte Thema).
+// Rangfolge: 1. planbare Themen, die früheste Frist zuerst (das ist bei ausreichender Kapazität beweisbar optimal), 2. nicht mehr planbare Themen (ebenfalls früheste Frist zuerst), 3. Themen ohne Frist (zufällig).
+function topicPlan(){const C=Math.max(1,goal("all")),jobs=[];
+  TOPICS.forEach(t=>{const dd=dueDays(t.id);if(dd!==null&&dd>=0)jobs.push({id:t.id,r:restT(t.id),D:Math.max(1,dd)})});
+  jobs.sort((a,b)=>a.D-b.D||a.r-b.r);const sel=[],late=new Set();let tot=0;
+  jobs.forEach(j=>{sel.push(j);tot+=j.r;if(tot>C*j.D){const m=sel.reduce((a,b)=>b.r>a.r?b:a);sel.splice(sel.indexOf(m),1);tot-=m.r;late.add(m.id)}});
+  const rank={};jobs.forEach(j=>rank[j.id]=(late.has(j.id)?1000:2000)+Math.max(0,999-j.D));return rank}
 function newPick(nw){const rnd=(a,b)=>st(a).r-st(b).r;
-  if(S.topic==="all"){try{const u={};TOPICS.forEach(t=>{const dd=dueDays(t.id);u[t.id]=dd===null||dd<0?0:restT(t.id)/Math.max(1,dd)});
-    const sc=i=>Math.max(...CARDS[i].tids.map(t=>u[t]||0)),mx=Math.max(...nw.map(sc));
+  if(S.topic==="all"){try{const rk=topicPlan(),sc=i=>Math.max(...CARDS[i].tids.map(t=>rk[t]||0)),mx=Math.max(...nw.map(sc));
     if(mx>0)return nw.filter(i=>sc(i)>=mx-1e-9).sort(rnd)[0]}catch(e){}}
   return nw.sort(rnd)[0]}
 const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
@@ -491,12 +496,10 @@ function motUpd(){if(!$("bMot"))return;snap();
 function motPanel(){const P=$("motP"),k=S.topic,all=k==="all";migEx();
   const d=dk(),t=cnt(k,d),G=goal(k),sg=sugg(k),DN=["So","Mo","Di","Mi","Do","Fr","Sa"];
   const near=all?TOPICS.map(x=>({x,dd:dueDays(x.id)})).filter(y=>y.dd!==null&&y.dd>=0).sort((a,b)=>a.dd-b.dd)[0]:null;
-  const dates=TOPICS.map(x=>M.ex[x.id]||""),common=dates.every(x=>x===dates[0])?dates[0]:"",mixed=!common&&dates.some(x=>x);
-  const due=all?common:(M.ex[k]||""),dd=all?(near?near.dd:null):dueDays(k),inD=n=>n===0?"heute":`in ${n} ${n===1?"Tag":"Tagen"}`;
-  let h=`<div class="mrow" style="justify-content:space-between"><span class="nw">Heute: <b>${t}</b> von <input type="number" id="mGoal" min="1" max="99" value="${G}" aria-label="Heute zu lernende Karten"></span><span class="nw">Fällig: <input type="date" id="mDue" value="${esc(due)}" aria-label="Fälligkeitsdatum${all?" für alle Themen":""}"></span></div><div class="mbar"><i style="width:${Math.min(100,t/G*100)}%"></i></div>`;
+  const due=M.ex[k]||"",dd=all?(near?near.dd:null):dueDays(k),inD=n=>n===0?"heute":`in ${n} ${n===1?"Tag":"Tagen"}`;
+  let h=`<div class="mrow" style="justify-content:space-between"><span class="nw">Heute: <b>${t}</b> von <input type="number" id="mGoal" min="1" max="99" value="${G}" aria-label="Heute zu lernende Karten"></span>${all?"":`<span class="nw">Fällig: <input type="date" id="mDue" value="${esc(due)}" aria-label="Fälligkeitsdatum"></span>`}</div><div class="mbar"><i style="width:${Math.min(100,t/G*100)}%"></i></div>`;
   if(sg!==null)h+=`<div class="mrow" style="color:var(--mut)">Vorschlag: ${sg} pro Tag · ${all?`als Nächstes fällig: ${near.x.num} ${inD(near.dd)}`:`fällig ${inD(dd)}`}${M.gk[k]&&M.gk[k]!==sg?` <button class="lnk" id="mAuto">Vorschlag übernehmen</button>`:""}</div>`;
   else if(!all&&dd!==null&&dd<0)h+=`<div class="mrow" style="color:var(--mut)">Das Fälligkeitsdatum ist vorbei.</div>`;
-  if(all&&!common)h+=`<div class="mrow" style="color:var(--mut)">${mixed?"Die Fristen sind je Thema verschieden – eine Eingabe setzt sie für alle.":"Die Eingabe setzt die Frist für alle Themen."}</div>`;
   const days=[];for(let i=6;i>=0;i--){const dy=dk(dAgo(i));days.push({n:DN[dAgo(i).getDay()],c:cnt(k,dy),h:hitOf(k,dy)})}
   const mx=Math.max(G,...days.map(x=>x.c)),sum=days.reduce((a,x)=>a+x.c,0),hits=days.filter(x=>x.h).length,s=streak(k);
   h+=`<div class="mrow">Serie: <b>${s}</b> ${s===1?"Tag":"Tage"} <span style="color:var(--mut)">(ein freier Tag pro Woche ist erlaubt)</span></div>`;
@@ -504,7 +507,7 @@ function motPanel(){const P=$("motP"),k=S.topic,all=k==="all";migEx();
   h+=`<div class="mrow">${lg(sym(),"lgb")} ${pct()} % aller Karten sind „Gelernt“ (${nLearned()} von ${CARDS.length})</div>`;
   P.innerHTML=h;
   $("mGoal").onchange=e=>{const v=parseInt(e.target.value);if(isNaN(v))delete M.gk[k];else M.gk[k]=clampG(v);fixHit();mSave();motUpd()};
-  $("mDue").onchange=e=>{const v=e.target.value;(all?TOPICS.map(x=>x.id):[k]).forEach(id=>{if(v)M.ex[id]=v;else delete M.ex[id]});fixHit();mSave();motUpd()};
+  if($("mDue"))$("mDue").onchange=e=>{const v=e.target.value;if(v)M.ex[k]=v;else delete M.ex[k];fixHit();mSave();motUpd()};
   if($("mAuto"))$("mAuto").onclick=()=>{delete M.gk[k];fixHit();mSave();motUpd()}}
 $("bMot").onclick=()=>{const P=$("motP");P.hidden=!P.hidden;if(!P.hidden)motPanel()};$("bQz").onclick=quiz;
 const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
