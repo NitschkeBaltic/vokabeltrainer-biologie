@@ -100,6 +100,7 @@ main.m .lx{display:none!important}
 .mi{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-weight:600;font-size:.95rem;padding:13px 14px;margin:0 0 8px;border-radius:12px}
 .mi small{font-weight:400;color:var(--mut);font-size:.72rem;text-align:right}
 .mi.armed small{color:#fff}
+.sb{margin:0 0 0 18px;padding-left:10px;border-left:2px solid var(--line)}
 .mg{font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:16px 2px 6px}
 .kr{display:flex;align-items:center;gap:8px;margin:0 0 8px}.kr .mi{margin:0;flex:1}
 .kr input{flex:1;min-width:0;width:auto}
@@ -644,7 +645,7 @@ function boot(){initKurse();loadKurs(KM.cur);resetUI();startSession()}
 // ---- Menü (eigener Bildschirm; Zurück-Taste/Wischgeste des Browsers schließt es)
 function pushH(){if(!pushed){try{history.pushState({vt:1},"");pushed=true}catch(e){}}}
 window.addEventListener("popstate",()=>{if(inMenu){pushed=false;leaveMenu()}});
-function openMenu(){menuK=(cur!=null&&CARDS[cur])?CARDS[cur].k:null;menuKid=K.id;menu()}
+function openMenu(){agOpen=kOpen=false;menuK=(cur!=null&&CARDS[cur])?CARDS[cur].k:null;menuKid=K.id;menu()}
 function enterM(){editing=true;qz=null;inMenu=true;MAIN.classList.add("m");$("bNo").disabled=$("bOk").disabled=true;pushH();window.scrollTo(0,0)}
 function leaveMenu(force){
   if(!inMenu){force?next():closeForm();return}
@@ -653,25 +654,33 @@ function leaveMenu(force){
   const ix=(!force&&menuKid===K.id&&menuK)?CARDS.findIndex(c=>c.k===menuK):-1;
   if(ix>=0){cur=ix;render()}else next()}
 function rsOff(){rsArm=false;clearTimeout(rsT)}
+let agOpen=false,kOpen=false;
 function menu(msg){enterM();rsOff();kArm=null;
   const all=S.topic==="all",tn=all?"Alle Themen":(TOPICS.find(t=>t.id===S.topic)||{name:""}).name,ago=KM.bk?Math.floor((Date.now()-KM.bk)/864e5):null;
   $("stage").innerHTML=`<div class="edit"><div class="mh"><button class="lnk" id="mB">‹ Zurück</button><b>Menü</b><span class="mhs"></span></div>
 <div class="mg" style="margin-top:4px">Kurse</div>
-<button class="mi" id="mKurs"><span>Kurs</span><small>${esc(K.name)} ›</small></button>
+<button class="mi" id="mKT" aria-expanded="${kOpen}"><span>Kurs</span><small>${esc(K.name)} ${kOpen?"▾":"▸"}</small></button>
+<div class="sb" id="kB"${kOpen?"":" hidden"}>
+<button class="mi" id="mKurs"><span>${esc(K.name)}</span><small>Kurse verwalten ›</small></button>
 <button class="mi" id="mKNew"><span>+ Neuer Kurs</span></button>
-<button class="mi" id="mRes"><span>Neu starten</span><small>${esc(tn)}${KM.kurse.length>1?" · "+esc(K.name):""}</small></button>
+<button class="mi" id="mRes"><span>Kurs neu starten</span><small>${esc(tn)}${KM.kurse.length>1?" · "+esc(K.name):""}</small></button>
 <div class="mg">Lernkarten</div>
-<button class="mi" id="mNew"><span>+ Neue Karte</span></button>
+<button class="mi" id="mNew"><span>+ Neue Lernkarte</span></button>
 <button class="mi" id="mImp"><span>Importieren</span><small>Kartenliste aus Word</small></button>
 <button class="mi" id="mExp"><span>Exportieren</span><small>Kartenliste nach Word</small></button>
-<div class="mg">Lernstand</div>
-<button class="mi" id="mPlan"><span>Planen</span><small>Ziele und Fristen</small></button>
+</div>
+<div class="mg">Lernprozess</div>
+<button class="mi" id="mPlan"><span>Planen</span><small>Fristen &amp; Ziele</small></button>
+<button class="mi" id="mLrn"><span>Lernen</span><small>${esc(tn)}</small></button>
 <button class="mi" id="mQz"><span>Prüfen</span><small>10 Karten aus „Gelernt“${KM.kurse.length>1?" · "+esc(K.name):""}</small></button>
+<button class="mi" id="mAg" aria-expanded="${agOpen}"><span>Agieren</span><small>Lernstand sichern / laden ${agOpen?"▾":"▸"}</small></button>
+<div class="sb" id="agB"${agOpen?"":" hidden"}>
 <button class="mi" id="mSv"><span>Sichern</span><small>Lernstand als Datei</small></button>
 <button class="mi" id="mLd"><span>Laden</span><small>Lernstand aus Datei</small></button>
+</div>
 <div class="mini" id="mBk">${ago===null?"Noch nicht gesichert.":ago===0?"Zuletzt gesichert: heute.":`Zuletzt gesichert: vor ${ago} ${ago===1?"Tag":"Tagen"}.`}</div>
 <div class="mini" id="mMsg">${msg?esc(msg):""}</div></div>`;
-  $("mB").onclick=()=>leaveMenu();$("mNew").onclick=()=>form("new");$("mKurs").onclick=()=>kursDlg();$("mKNew").onclick=()=>kursNew();
+  $("mAg").onclick=()=>{agOpen=!agOpen;menu(msg)};$("mKT").onclick=()=>{kOpen=!kOpen;menu(msg)};$("mLrn").onclick=()=>leaveMenu();$("mB").onclick=()=>leaveMenu();$("mNew").onclick=()=>form("new");$("mKurs").onclick=()=>kursDlg();$("mKNew").onclick=()=>kursNew();
   $("mImp").onclick=importDlg;$("mExp").onclick=exportDlg;$("mSv").onclick=saveDlg;$("mLd").onclick=loadDlg;$("mPlan").onclick=planDlg;
   $("mQz").onclick=()=>{leaveQuiet();quiz()}; // Prüfen läuft in der Lernansicht (mit Nochmal/Sitzt), das Menü wird dafür verlassen
   $("mRes").onclick=()=>{const b=$("mRes");
