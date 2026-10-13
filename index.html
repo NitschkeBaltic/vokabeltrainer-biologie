@@ -216,7 +216,7 @@ function render(){
   $("stage").innerHTML=`<div class="card" id="card"><button class="ed" id="bEd" title="Karte bearbeiten" aria-label="Karte bearbeiten">✎</button><div class="tag">${NAMES[card.b]}${isChk?" · Einstiegs-Check":""}</div>${S.rev?`<div class="term q" style="white-space:pre-line">${dh}</div>`:`<div class="term">${esc(T)}</div>`}${shown?`<div class="def">${S.rev?esc(T):dh}</div>`:`<div class="hint">Tippen zum Aufdecken</div>`}</div>`;
   fitTerm();$("card").onclick=reveal;$("bEd").onclick=e=>{e.stopPropagation();form("edit")};$("bNo").disabled=$("bOk").disabled=!shown}
 const fitTerm=()=>{const t=document.querySelector("#stage .card .term");if(t&&Math.max(...t.textContent.split(/\s+/).map(w=>w.length))>16)t.style.fontSize="1.25rem"}; // sehr lange Fachwörter passen in eine Zeile
-function closeForm(){if(inMenu)return menu();cur==null?next():render()}
+function closeForm(){if(inMenu)return (mPage||menu)();cur==null?next():render()}
 function form(mode,fk0){
   editing=true;const c=mode==="edit"?CARDS[cur]:null,isU=c&&c.u,k=c&&c.k;
   let FK=fk0||K.id,FT=topicsOf(FK);
@@ -615,9 +615,9 @@ function loadKurs(id){K=KM.kurse.find(k=>k.id===id)||KM.kurse[0];
 function inKurs(id,fn){if(id===K.id)return fn(); // kurz in einem anderen Kurs arbeiten (z. B. Karte anlegen, Liste importieren), danach zurück
   const prev=K.id;persistKurs();loadKurs(id);let r;try{r=fn()}finally{persistKurs();loadKurs(prev)}return r}
 function resetUI(){cur=null;shown=false;isChk=false;MSG="";qz=null}
-function setKurs(id){if(id===K.id)return;persistKurs();loadKurs(id);KM.cur=id;wMeta();resetUI();startSession()}
+function setKurs(id){if(id===K.id)return;persistKurs();K.t=Date.now();loadKurs(id);K.t=Date.now();KM.cur=id;wMeta();resetUI();startSession()}
 function uniqueName(n){const b=String(n).trim().replace(/_+/g," ").slice(0,30);let x=b,i=2;while(KM.kurse.some(k=>nk(k.name)===nk(x)))x=b+" "+i++;return x}
-function addKurs(name){const n=uniqueName(name);let id=slug(n);while(KM.kurse.some(k=>k.id===id)||SHIP[id])id+="-2";KM.kurse.push({id,name:n});wMeta();return id}
+function addKurs(name){const n=uniqueName(name);let id=slug(n);while(KM.kurse.some(k=>k.id===id)||SHIP[id])id+="-2";KM.kurse.push({id,name:n,t:Date.now()});wMeta();return id}
 const kursMatch=n=>KM.kurse.find(k=>nk(k.name)===nk(n));
 function delKurs(id){if(KM.kurse.length<2)return;const k=KM.kurse.find(x=>x.id===id);if(!k)return;
   ["s","e","u","t","p"].forEach(x=>{try{localStorage.removeItem(kk(id,x))}catch(e){}});
@@ -641,11 +641,11 @@ function initKurse(){const m=rd(META,null);
     KM=Object.assign({v:1,gone:[],bk:0},m);if(!Array.isArray(KM.gone))KM.gone=[];if(!KM.kurse.some(k=>k.id===KM.cur))KM.cur=KM.kurse[0].id}
   else migrateOld();
   loadG()}
-function boot(){initKurse();loadKurs(KM.cur);resetUI();startSession()}
+function boot(){initKurse();loadKurs(KM.cur);K.t=Date.now();wMeta();resetUI();startSession()}
 // ---- Menü (eigener Bildschirm; Zurück-Taste/Wischgeste des Browsers schließt es)
 function pushH(){if(!pushed){try{history.pushState({vt:1},"");pushed=true}catch(e){}}}
 window.addEventListener("popstate",()=>{if(inMenu){pushed=false;leaveMenu()}});
-function openMenu(){agOpen=kOpen=false;menuK=(cur!=null&&CARDS[cur])?CARDS[cur].k:null;menuKid=K.id;menu()}
+function openMenu(){menuK=(cur!=null&&CARDS[cur])?CARDS[cur].k:null;menuKid=K.id;menu()}
 function enterM(){editing=true;qz=null;inMenu=true;MAIN.classList.add("m");$("bNo").disabled=$("bOk").disabled=true;pushH();window.scrollTo(0,0)}
 function leaveMenu(force){
   if(!inMenu){force?next():closeForm();return}
@@ -654,38 +654,44 @@ function leaveMenu(force){
   const ix=(!force&&menuKid===K.id&&menuK)?CARDS.findIndex(c=>c.k===menuK):-1;
   if(ix>=0){cur=ix;render()}else next()}
 function rsOff(){rsArm=false;clearTimeout(rsT)}
-let agOpen=false,kOpen=false;
-function menu(msg){enterM();rsOff();kArm=null;
-  const all=S.topic==="all",tn=all?"Alle Themen":(TOPICS.find(t=>t.id===S.topic)||{name:""}).name,ago=KM.bk?Math.floor((Date.now()-KM.bk)/864e5):null;
+const rsOff2=rsOff;
+let mPage=null; // Unterseite des Menüs, zu der Dialoge (Neue Lernkarte, Import, Export …) zurückkehren
+const tnOf=()=>S.topic==="all"?"Alle Themen":(TOPICS.find(t=>t.id===S.topic)||{name:""}).name;
+function menu(msg){enterM();rsOff();kArm=null;mPage=null;
+  const tn=tnOf(),ago=KM.bk?Math.floor((Date.now()-KM.bk)/864e5):null;
   $("stage").innerHTML=`<div class="edit"><div class="mh"><button class="lnk" id="mB">‹ Zurück</button><b>Menü</b><span class="mhs"></span></div>
 <div class="mg" style="margin-top:4px">Kurse</div>
-<button class="mi" id="mKT" aria-expanded="${kOpen}"><span>Kurs</span><small>${esc(K.name)} ${kOpen?"▾":"▸"}</small></button>
-<div class="sb" id="kB"${kOpen?"":" hidden"}>
-<button class="mi" id="mKurs"><span>${esc(K.name)}</span><small>Kurse verwalten ›</small></button>
-<button class="mi" id="mKNew"><span>+ Neuer Kurs</span></button>
-<button class="mi" id="mRes"><span>Kurs neu starten</span><small>${esc(tn)}${KM.kurse.length>1?" · "+esc(K.name):""}</small></button>
-<div class="mg">Lernkarten</div>
-<button class="mi" id="mNew"><span>+ Neue Lernkarte</span></button>
-<button class="mi" id="mImp"><span>Importieren</span><small>Kartenliste aus Word</small></button>
-<button class="mi" id="mExp"><span>Exportieren</span><small>Kartenliste nach Word</small></button>
-</div>
+<button class="mi" id="mKT"><span>Kurs</span><small>${esc(K.name)} ›</small></button>
 <div class="mg">Lernprozess</div>
 <button class="mi" id="mPlan"><span>Planen</span><small>Fristen &amp; Ziele</small></button>
 <button class="mi" id="mLrn"><span>Lernen</span><small>${esc(tn)}</small></button>
 <button class="mi" id="mQz"><span>Prüfen</span><small>10 Karten aus „Gelernt“${KM.kurse.length>1?" · "+esc(K.name):""}</small></button>
-<button class="mi" id="mAg" aria-expanded="${agOpen}"><span>Agieren</span><small>Lernstand sichern / laden ${agOpen?"▾":"▸"}</small></button>
-<div class="sb" id="agB"${agOpen?"":" hidden"}>
-<button class="mi" id="mSv"><span>Sichern</span><small>Lernstand als Datei</small></button>
-<button class="mi" id="mLd"><span>Laden</span><small>Lernstand aus Datei</small></button>
-</div>
+<button class="mi" id="mAg"><span>Agieren</span><small>Lernstand sichern / laden ›</small></button>
 <div class="mini" id="mBk">${ago===null?"Noch nicht gesichert.":ago===0?"Zuletzt gesichert: heute.":`Zuletzt gesichert: vor ${ago} ${ago===1?"Tag":"Tagen"}.`}</div>
 <div class="mini" id="mMsg">${msg?esc(msg):""}</div></div>`;
-  $("mAg").onclick=()=>{agOpen=!agOpen;menu(msg)};$("mKT").onclick=()=>{kOpen=!kOpen;menu(msg)};$("mLrn").onclick=()=>leaveMenu();$("mB").onclick=()=>leaveMenu();$("mNew").onclick=()=>form("new");$("mKurs").onclick=()=>kursDlg();$("mKNew").onclick=()=>kursNew();
-  $("mImp").onclick=importDlg;$("mExp").onclick=exportDlg;$("mSv").onclick=saveDlg;$("mLd").onclick=loadDlg;$("mPlan").onclick=planDlg;
-  $("mQz").onclick=()=>{leaveQuiet();quiz()}; // Prüfen läuft in der Lernansicht (mit Nochmal/Sitzt), das Menü wird dafür verlassen
-  $("mRes").onclick=()=>{const b=$("mRes");
-    if(!rsArm){rsArm=true;b.classList.add("armed");b.innerHTML=`<span>„${esc(tn)}“ zurücksetzen?</span><small>Nochmal tippen</small>`;rsT=setTimeout(()=>{if($("mRes")&&rsArm)menu()},6000);return}
-    rsOff();scope().forEach(i=>{delete S.c[CARDS[i].k]});S.cel=null;S.last=null;S.chk=[];save();leaveMenu(true)}}
+  $("mB").onclick=()=>leaveMenu();$("mKT").onclick=()=>kursMenu();$("mAg").onclick=()=>agMenu();$("mLrn").onclick=()=>leaveMenu();$("mPlan").onclick=planDlg;
+  $("mQz").onclick=()=>{leaveQuiet();quiz()}} // Prüfen läuft in der Lernansicht (mit Nochmal/Sitzt), das Menü wird dafür verlassen
+// Unterseite „Kurs“
+function kursMenu(msg){enterM();rsOff();kArm=null;mPage=kursMenu;
+  $("stage").innerHTML=`<div class="edit"><div class="mh"><button class="lnk" id="mB">‹ Menü</button><b>Kurs</b><span class="mhs"></span></div>
+<div class="mg" style="margin-top:4px">Kurse</div>
+<button class="mi" id="mKNew"><span>+ Neuer Kurs</span></button>
+<button class="mi" id="mKurs"><span>Kurse verwalten</span><small>${esc(K.name)} ›</small></button>
+<div class="mg">Lernkarten</div>
+<button class="mi" id="mNew"><span>+ Neue Lernkarte</span></button>
+<button class="mi" id="mImp"><span>Importieren</span><small>Kartenliste aus Word</small></button>
+<button class="mi" id="mExp"><span>Exportieren</span><small>Kartenliste nach Word</small></button>
+<div class="mini" id="mMsg">${msg?esc(msg):""}</div></div>`;
+  $("mB").onclick=()=>menu();$("mNew").onclick=()=>form("new");$("mKurs").onclick=()=>kursDlg();$("mKNew").onclick=()=>kursNew(kursMenu);
+  $("mImp").onclick=importDlg;$("mExp").onclick=exportDlg}
+// Unterseite „Agieren“
+function agMenu(msg){enterM();rsOff();mPage=agMenu;const ago=KM.bk?Math.floor((Date.now()-KM.bk)/864e5):null;
+  $("stage").innerHTML=`<div class="edit"><div class="mh"><button class="lnk" id="mB">‹ Menü</button><b>Agieren</b><span class="mhs"></span></div>
+<button class="mi" id="mSv" style="margin-top:4px"><span>Sichern</span><small>Lernstand als Datei</small></button>
+<button class="mi" id="mLd"><span>Laden</span><small>Lernstand aus Datei</small></button>
+<div class="mini" id="mBk">${ago===null?"Noch nicht gesichert.":ago===0?"Zuletzt gesichert: heute.":`Zuletzt gesichert: vor ${ago} ${ago===1?"Tag":"Tagen"}.`}</div>
+<div class="mini" id="mMsg">${msg?esc(msg):""}</div></div>`;
+  $("mB").onclick=()=>menu();$("mSv").onclick=saveDlg;$("mLd").onclick=loadDlg}
 function leaveQuiet(){inMenu=false;MAIN.classList.remove("m");rsOff();if(pushed){pushed=false;try{history.back()}catch(e){}}}
 // Planen: Panel (Tagesziel, Frist, Serie …) als Seite im Menü; das Thema wird hier gewählt (wie das Dropdown der Lernansicht)
 function planDlg(){enterM();
@@ -694,28 +700,31 @@ function planDlg(){enterM();
   $("pT").onchange=e=>{S.topic=e.target.value;S.last=null;save();menuK=null;motPanel()};
   motPanel()}
 function kursDlg(msg,ren){
-  enterM();const gone=KM.gone.filter(id=>SHIPN[id]&&!KM.kurse.some(k=>k.id===id));
-  const row=k=>ren===k.id?`<div class="kr"><input id="kRI" value="${ea(k.name)}" maxlength="30" aria-label="Neuer Name" autocomplete="off"><div class="kl"><button class="lnk" id="kRS">Speichern</button><button class="lnk" id="kRC">Abbrechen</button></div></div>`
-    :`<div class="kr"><button class="mi" data-go="${k.id}"><span>${esc(k.name)}</span><small>${k.id===K.id?"✓ aktuell":""}</small></button><div class="kl"><button class="lnk" data-rn="${k.id}">Umbenennen</button>${KM.kurse.length>1?`<button class="lnk${kArm===k.id?" armed":""}" data-del="${k.id}">${kArm===k.id?"Wirklich löschen":"Löschen"}</button>`:""}</div></div>`;
-  const ak=KM.kurse.find(k=>k.id===kArm);
-  $("stage").innerHTML=`<div class="edit"><div class="mh"><button class="lnk" id="kB">‹ Menü</button><b>Kurs</b><span class="mhs"></span></div>${KM.kurse.map(row).join("")}${ak?`<div class="mini" style="color:var(--no)">„${esc(ak.name)}“ wird mit allen Karten und dem gesamten Lernstand gelöscht. Zum Bestätigen auf „Wirklich löschen“ tippen.</div>`:""}<button class="mi" id="kNew"><span>+ Neuer Kurs</span></button>${gone.map(id=>`<div style="text-align:center"><button class="lnk" data-re="${id}">${esc(SHIPN[id])} wiederherstellen</button></div>`).join("")}${KM.kurse.length<2?'<div class="mini">Der letzte Kurs kann nicht gelöscht werden.</div>':""}<div class="mini" id="kM">${msg?esc(msg):""}</div></div>`;
+  enterM();rsOff2();mPage=kursMenu;const gone=KM.gone.filter(id=>SHIPN[id]&&!KM.kurse.some(k=>k.id===id)),tn=tnOf();
+  const row=(k,cu)=>ren===k.id?`<div class="kr"><input id="kRI" value="${ea(k.name)}" maxlength="30" aria-label="Neuer Name" autocomplete="off"><div class="kl"><button class="lnk" id="kRS">Speichern</button><button class="lnk" id="kRC">Abbrechen</button></div></div>`
+    :`<div class="kr"><button class="mi" data-go="${k.id}"><span>${esc(k.name)}</span><small>${cu?"✓ aktuell":""}</small></button><div class="kl"><button class="lnk" data-rn="${k.id}">Umbenennen</button>${KM.kurse.length>1?`<button class="lnk${kArm===k.id?" armed":""}" data-del="${k.id}">${kArm===k.id?"Wirklich löschen":"Löschen"}</button>`:""}</div></div>`;
+  const ak=KM.kurse.find(k=>k.id===kArm),others=KM.kurse.filter(k=>k.id!==K.id).sort((x,y)=>(y.t||0)-(x.t||0));
+  $("stage").innerHTML=`<div class="edit"><div class="mh"><button class="lnk" id="kB">‹ Kurs</button><b>Kurse verwalten</b><span class="mhs"></span></div>${row(K,true)}${others.length?others.map(k=>row(k,false)).join(""):'<div class="mini">&nbsp;</div>'}${ak?`<div class="mini" style="color:var(--no)">„${esc(ak.name)}“ wird mit allen Karten und dem gesamten Lernstand gelöscht. Zum Bestätigen auf „Wirklich löschen“ tippen.</div>`:""}<button class="mi" id="kNew"><span>+ Neuer Kurs</span></button><button class="mi" id="mRes"><span>Kurs neu starten</span><small>Alle Karten in Fach 1</small></button><div class="mini">Betrifft: ${esc(tn)} (Kurs ${esc(K.name)}).</div>${gone.map(id=>`<div style="text-align:center"><button class="lnk" data-re="${id}">${esc(SHIPN[id])} wiederherstellen</button></div>`).join("")}${KM.kurse.length<2?'<div class="mini">Der letzte Kurs kann nicht gelöscht werden.</div>':""}<div class="mini" id="kM">${msg?esc(msg):""}</div></div>`;
   const q=a=>[...$("stage").querySelectorAll(a)];
-  $("kB").onclick=()=>menu();$("kNew").onclick=()=>{kArm=null;kursNew()};
+  $("kB").onclick=()=>kursMenu();$("kNew").onclick=()=>{kArm=null;kursNew(()=>kursDlg())};
   q("[data-go]").forEach(b=>b.onclick=()=>{kArm=null;const id=b.dataset.go;if(id===K.id)leaveMenu();else{setKurs(id);leaveMenu(true)}});
   q("[data-rn]").forEach(b=>b.onclick=()=>{kArm=null;kursDlg("",b.dataset.rn)});
   q("[data-del]").forEach(b=>b.onclick=()=>{const id=b.dataset.del;if(kArm!==id){kArm=id;kursDlg();return}kArm=null;delKurs(id);kursDlg("✓ Kurs gelöscht")});
   q("[data-re]").forEach(b=>b.onclick=()=>{const id=b.dataset.re;restoreShip(id);kursDlg("✓ "+SHIPN[id]+" wiederhergestellt (mitgelieferte Karten, Lernstand neu)")});
+  $("mRes").onclick=()=>{const b=$("mRes");
+    if(!rsArm){rsArm=true;kArm=null;b.classList.add("armed");b.innerHTML=`<span>„${esc(tn)}“ zurücksetzen?</span><small>Nochmal tippen</small>`;rsT=setTimeout(()=>{if($("mRes")&&rsArm)kursDlg()},6000);return}
+    rsOff();scope().forEach(i=>{delete S.c[CARDS[i].k]});S.cel=null;S.last=null;S.chk=[];save();leaveMenu(true)};
   if($("kRI")){const ri=$("kRI");ri.focus();ri.select();$("kRC").onclick=()=>kursDlg();
     const go=()=>{const v=ri.value.trim().replace(/_+/g," ");if(!nk(v)){$("kM").textContent="Bitte einen Namen eingeben.";return}
       if(KM.kurse.some(x=>x.id!==ren&&nk(x.name)===nk(v))){$("kM").textContent="Diesen Kurs gibt es schon.";return}
       KM.kurse.find(x=>x.id===ren).name=v;wMeta();kursDlg("✓ Umbenannt")};
     $("kRS").onclick=go;ri.onkeydown=e=>{if(e.key==="Enter")go()}}}
-function kursNew(){enterM();
-  $("stage").innerHTML=`<div class="edit"><div class="tag">Neuer Kurs</div><label for="nN">Name des Kurses</label><input id="nN" placeholder="z. B. Englisch" maxlength="30" autocomplete="off"><div class="row"><button class="neutral" id="nX">Abbrechen</button><button class="ok" id="nA">Anlegen</button></div><div class="mini" id="nM">Danach kannst du über „Importieren“ Kartenlisten einlesen oder mit „+ Neue Karte“ eigene Karten erstellen.</div></div>`;
-  $("nN").focus();$("nX").onclick=()=>kursDlg();
+function kursNew(back){enterM();back=back||kursMenu;
+  $("stage").innerHTML=`<div class="edit"><div class="tag">Neuer Kurs</div><label for="nN">Name des Kurses</label><input id="nN" placeholder="z. B. Englisch" maxlength="30" autocomplete="off"><div class="row"><button class="neutral" id="nX">Abbrechen</button><button class="ok" id="nA">Anlegen</button></div><div class="mini" id="nM">Danach kannst du über „Importieren“ Kartenlisten einlesen oder mit „+ Neue Lernkarte“ eigene Karten erstellen.</div></div>`;
+  $("nN").focus();$("nX").onclick=()=>back();
   const go=()=>{const v=$("nN").value.trim().replace(/_+/g," ");if(!nk(v)){$("nM").textContent="Bitte einen Namen eingeben (mit Buchstaben oder Ziffern).";return}
     if(KM.kurse.some(k=>nk(k.name)===nk(v))){$("nM").textContent="Diesen Kurs gibt es schon.";return}
-    const id=addKurs(v);setKurs(id);menu("✓ Kurs „"+KM.kurse.find(k=>k.id===id).name+"“ angelegt. Jetzt Karten importieren oder erstellen.")};
+    const id=addKurs(v);setKurs(id);kursMenu("✓ Kurs „"+KM.kurse.find(k=>k.id===id).name+"“ angelegt. Jetzt Karten importieren oder erstellen.")};
   $("nA").onclick=go;$("nN").onkeydown=e=>{if(e.key==="Enter")go()}}
 // ---- Lernstand sichern/laden (alle Kurse in einer Datei; ohne Prüfergebnisse). Nicht zu verwechseln mit Exportieren/Importieren (Kartenlisten als Word-Datei).
 function saveDlg(){enterM();
@@ -738,7 +747,7 @@ function chkBackup(o){const bad_="Die Sicherung ist beschädigt.",js=s=>{try{JSO
 function applyBackup(o){const old={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.indexOf("vt_k_")===0||k===META||k===GKEY))old[k]=localStorage.getItem(k)}
   const wipe=()=>Object.keys(old).forEach(k=>localStorage.removeItem(k));
   try{wipe();
-    const meta={v:1,cur:o.meta.kurse.some(k=>k.id===o.meta.cur)?o.meta.cur:o.meta.kurse[0].id,kurse:o.meta.kurse.map(k=>{const r={id:k.id,name:String(k.name).slice(0,30)};if(k.ship&&SHIP[k.id])r.ship=1;return r}),gone:(Array.isArray(o.meta.gone)?o.meta.gone:[]).filter(id=>SHIPN[id]),bk:parseInt(o.meta.bk)||0};
+    const meta={v:1,cur:o.meta.kurse.some(k=>k.id===o.meta.cur)?o.meta.cur:o.meta.kurse[0].id,kurse:o.meta.kurse.map(k=>{const r={id:k.id,name:String(k.name).slice(0,30)};if(parseInt(k.t)>0)r.t=parseInt(k.t);if(k.ship&&SHIP[k.id])r.ship=1;return r}),gone:(Array.isArray(o.meta.gone)?o.meta.gone:[]).filter(id=>SHIPN[id]),bk:parseInt(o.meta.bk)||0};
     localStorage.setItem(META,JSON.stringify(meta));
     meta.kurse.forEach(k=>{const e=o.k[k.id]||{};["s","e","u","t","p"].forEach(x=>{if(typeof e[x]==="string")localStorage.setItem(kk(k.id,x),e[x])})});
     if(typeof o.g==="string")localStorage.setItem(GKEY,o.g)}
@@ -753,7 +762,7 @@ function loadDlg(){enterM();let data=null,armed=false;
   $("lA").onclick=()=>{if(!data)return;
     if(!armed){armed=true;$("lA").textContent="Ja, ersetzen";$("lA").classList.add("armed");$("lM").textContent="Achtung: Der gesamte Lernstand auf diesem Gerät wird durch den Stand der Datei ersetzt. Zum Bestätigen nochmal tippen.";return}
     try{applyBackup(data)}catch(er){$("lM").textContent="Laden fehlgeschlagen – der bisherige Stand bleibt erhalten.";return}
-    boot();menuK=null;menu("✓ Lernstand geladen.")}}
+    boot();menuK=null;agMenu("✓ Lernstand geladen.")}}
 document.addEventListener("keydown",e=>{if(editing||/SELECT|INPUT|TEXTAREA/.test(e.target.tagName))return;
   if(e.key===" "||e.key==="Enter"){e.preventDefault();reveal()}
   else if(e.key==="ArrowLeft"||e.key==="1")rate(false);else if(e.key==="ArrowRight"||e.key==="2")rate(true)});
